@@ -25,7 +25,9 @@
 <style>
   :root{
     --paper:#FFFDF6; --ink:#16273F; --blue:#1B4B8D; --blue-2:#2F6FBE;
-    --gold:#C9A227; --red:#C8342A; --ease:cubic-bezier(.22,1,.36,1);
+    --gold:#C9A227; --red:#C8342A;
+    --slow:cubic-bezier(.16,1,.3,1);       /* 长尾减速：贵感的来源 */
+    --soft:cubic-bezier(.33,1,.68,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -36,44 +38,59 @@
     -webkit-font-smoothing:antialiased;
     display:flex;flex-direction:column;overflow:auto;padding:16px;min-height:100%;
   }
+  /* 胶片颗粒：压掉扁平矢量的「AI 味」 */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9;opacity:.05;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.55'/></svg>");
+  }
   body::after{
     content:"";position:fixed;inset:auto 0 0 0;height:26vh;pointer-events:none;
     background:linear-gradient(to bottom,transparent,rgba(27,75,141,.09));
   }
 
+  /* ── 相机：整幕共享一个连续运动，而不是各动各的 ── */
+  #scene{display:flex;flex-direction:column;align-items:center;width:100%;margin:auto 0;will-change:transform}
+
   .sheet{
-    position:relative;margin:auto;flex:none;width:min(430px,94vw);
+    position:relative;width:min(430px,94vw);flex:none;
     background:var(--paper);border:1px solid rgba(27,75,141,.16);border-radius:4px;
     box-shadow:0 24px 60px -22px rgba(22,39,63,.34), 0 2px 0 rgba(255,255,255,.9) inset;
     padding:30px 26px 26px;text-align:center;
-    opacity:0;transform:translateY(14px) scale(.985);
-    transition:opacity .5s var(--ease), transform .7s var(--ease);
+    transform-origin:50% 42%;
+    opacity:0;transform:perspective(1100px) rotateX(-22deg) translateY(26px) scale(.965);
+    will-change:transform,opacity;
   }
-  .sheet.in{opacity:1;transform:none}
-  .sheet.out{opacity:.35;transform:scale(.988);transition:opacity .42s ease,transform .42s ease}
   .sheet::before{
     content:"";position:absolute;inset:9px;border:1px solid rgba(27,75,141,.14);
     border-radius:2px;pointer-events:none;
   }
+  /* 纸面高光扫过 */
+  .sheen{
+    position:absolute;inset:0;border-radius:4px;overflow:hidden;pointer-events:none;opacity:0;
+  }
+  .sheen i{
+    position:absolute;top:-30%;bottom:-30%;width:38%;left:-45%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.9),transparent);
+    transform:skewX(-14deg);
+  }
 
-  /* ── 校徽 + 入场描边环 ───────────────────────── */
+  /* ── 校徽：先画环，再让徽章在环里显影（预告 → 落地） ── */
   .crest{position:relative;width:118px;height:118px;margin:2px auto 0}
-  .crest img{position:absolute;inset:0;width:100%;height:100%;will-change:transform,opacity}
+  .crest img{position:absolute;inset:0;width:100%;height:100%;opacity:0;will-change:transform,opacity}
   .crest svg{position:absolute;inset:-13px;width:calc(100% + 26px);height:calc(100% + 26px);overflow:visible}
   .crest circle{fill:none;stroke:var(--blue);stroke-width:2;stroke-linecap:round;
-    stroke-dasharray:452;stroke-dashoffset:452}
+    stroke-dasharray:452;stroke-dashoffset:452;transform-origin:75px 75px}
 
-  /* ── 标题逐字 ───────────────────────────────── */
-  h1{margin-top:16px;font-size:31px;letter-spacing:.14em;font-weight:700;color:var(--blue)}
-  h1 span{display:inline-block;opacity:0;will-change:transform,opacity,filter}
-  .dept{margin-top:7px;font-size:12px;letter-spacing:.3em;color:rgba(22,39,63,.5);
-    opacity:0;transition:opacity .6s ease .35s}
-  .dept.in{opacity:1}
-  .rule{width:0;height:2px;background:var(--gold);margin:15px auto 0;opacity:.85;
-    transition:width .7s var(--ease)}
-  .rule.in{width:52px}
+  /* ── 标题：逐字从基线遮罩后推出，不用模糊 ── */
+  h1{margin-top:16px;font-size:31px;letter-spacing:.14em;font-weight:700;color:var(--blue);
+    display:flex;justify-content:center}
+  h1 .g{display:inline-block;overflow:hidden;line-height:1.18}
+  h1 .i{display:inline-block;transform:translateY(110%);will-change:transform}
+  .dept{margin-top:7px;font-size:12px;letter-spacing:.3em;color:rgba(22,39,63,.5);opacity:0;
+    will-change:transform,opacity}
+  .rule{width:0;height:2px;background:var(--gold);margin:15px auto 0;opacity:.85}
 
-  /* ── 舞台：lane 裁切走路，章在 lane 外不被裁 ── */
+  /* ── 舞台：lane 裁切走路，印章在 lane 外不被裁 ── */
   .stage{position:relative;height:196px;margin:6px auto 0}
   .lane{position:absolute;inset:0;overflow:hidden}
   .walker{position:absolute;bottom:0;left:0;width:100%;height:100%;will-change:transform}
@@ -90,25 +107,26 @@
   .impact{position:absolute;top:64px;right:62px;width:0;height:0;border-radius:50%;
     border:2px solid rgba(200,52,42,.5);opacity:0;will-change:transform,opacity}
 
-  .status{margin-top:4px;font-size:15.5px;line-height:1.75;color:rgba(22,39,63,.86)}
+  .status{margin-top:4px;font-size:15.5px;line-height:1.75;color:rgba(22,39,63,.86);
+    opacity:0;will-change:transform,opacity}
   .status b{color:var(--blue);font-weight:700}
 
-  /* ── 进度条：带流动高光 ─────────────────────── */
-  .meter{margin:16px auto 0;width:min(280px,86%)}
+  .meter{margin:16px auto 0;width:min(280px,86%);opacity:0;will-change:opacity}
   .bar{position:relative;height:4px;background:rgba(27,75,141,.13);border-radius:99px;overflow:hidden}
   .fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:99px;
     background:linear-gradient(90deg,var(--blue-2),var(--blue));will-change:width}
   .fill::after{content:"";position:absolute;inset:0;border-radius:99px;
     background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
-    transform:translateX(-100%);animation:sheen 1.5s linear infinite}
+    transform:translateX(-100%);animation:sheen 1.6s linear infinite}
   @keyframes sheen{to{transform:translateX(100%)}}
   .count{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;
     letter-spacing:.16em;color:rgba(22,39,63,.46);font-variant-numeric:tabular-nums}
 
-  .actions{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+  .actions{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;
+    opacity:0;will-change:transform,opacity}
   button,a.btn{font:inherit;font-size:13.5px;letter-spacing:.08em;padding:10px 18px;border-radius:99px;
     cursor:pointer;border:1px solid var(--blue);background:transparent;color:var(--blue);
-    transition:background .18s ease,color .18s ease,transform .12s ease,border-color .18s ease;
+    transition:background .22s var(--soft),color .22s var(--soft),transform .16s var(--soft),border-color .22s;
     text-decoration:none;-webkit-tap-highlight-color:transparent;user-select:none}
   a.btn{background:var(--blue);color:var(--paper)}
   button:active,a.btn:active{transform:translateY(1px) scale(.985)}
@@ -116,11 +134,12 @@
   button:hover{background:rgba(27,75,141,.07)}
   :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 
-  .foot{margin:16px 0 4px;text-align:center;font-size:11px;color:rgba(22,39,63,.4);flex:none}
+  .foot{margin:16px 0 4px;text-align:center;font-size:11px;color:rgba(22,39,63,.4);flex:none;
+    opacity:0;will-change:opacity}
   .foot button{border:0;background:none;color:inherit;font-size:inherit;text-decoration:underline;
     padding:4px 8px;letter-spacing:.04em}
 
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:8}
   .confetti i{position:absolute;width:7px;height:11px;border-radius:1px;will-change:transform,opacity}
 
   dialog{border:1px solid rgba(27,75,141,.2);border-radius:6px;padding:26px 24px;max-width:390px;width:88vw;
@@ -133,24 +152,24 @@
 
   @media (max-height:660px){
     .stage{height:150px}.walker img{height:142px}.crest{width:92px;height:92px}
-    h1{font-size:26px}.sheet{padding:20px 20px 18px}
-    .impact{top:56px;right:56px}
+    h1{font-size:26px}.sheet{padding:20px 20px 18px}.impact{top:56px;right:56px}
   }
   @media (max-height:480px){
-    .stage{height:112px}.walker img{height:106px}.crest{width:68px;height:68px}
-    .crest svg{inset:-8px}
+    .stage{height:112px}.walker img{height:106px}.crest{width:68px;height:68px}.crest svg{inset:-8px}
     h1{font-size:22px;margin-top:10px}.dept{font-size:10px;letter-spacing:.22em}
     .status{font-size:13.5px;line-height:1.5}.sheet{padding:14px 18px 14px}
     .meter{margin-top:10px}.actions{margin-top:12px}
     button,a.btn{padding:8px 14px;font-size:12.5px}
-    .stamp{width:78px;height:78px;font-size:11px;top:8px;right:8px}
-    .impact{top:47px;right:47px}
+    .stamp{width:78px;height:78px;font-size:11px;top:8px;right:8px}.impact{top:47px;right:47px}
   }
 </style>
 </head>
 <body>
 
+<div id="scene">
 <main class="sheet" id="sheet">
+  <div class="sheen" id="sheen" aria-hidden="true"><i></i></div>
+
   <div class="crest" id="crest">
     <svg viewBox="0 0 150 150" aria-hidden="true"><circle id="ring" cx="75" cy="75" r="72"/></svg>
     <img src="assets/badge.webp" alt="南京传媒学院校徽" width="118" height="118">
@@ -175,20 +194,21 @@
 
   <p class="status" id="status" aria-live="polite">奶娃正在护送你前往<br><b>南京传媒学院</b></p>
 
-  <div class="meter">
+  <div class="meter" id="meter">
     <div class="bar"><div class="fill" id="fill"></div></div>
     <div class="count"><span id="phase">正在入 学</span><span id="secs">5.6s</span></div>
   </div>
 
-  <div class="actions">
+  <div class="actions" id="actions">
     <a class="btn" href="https://www.cucn.edu.cn/" id="go">立即前往</a>
     <button id="hold" type="button">按住不走</button>
   </div>
 </main>
 
-<div class="confetti" id="confetti" aria-hidden="true"></div>
+<p class="foot" id="foot"><button type="button" id="about-btn">关于本站</button></p>
+</div>
 
-<p class="foot"><button type="button" id="about-btn">关于本站</button></p>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
 
 <dialog id="about">
   <h2>关于本站</h2>
@@ -202,64 +222,68 @@
 (() => {
   const TARGET = "https://www.cucn.edu.cn/";
 
-  /* 时间轴（秒）——所有值都由 t 的纯函数导出，可暂停、可跳、与帧率无关 */
+  /* 时间轴（秒）。开头刻意留白：纸面翻正 → 画环 → 徽章显影 → 逐字 → 光扫 → 才轮到角色 */
   const K = {
-    sheet:.00, badge:.12, title:.42, walk:.52, walkEnd:2.30,
-    stamp:2.34, settle:2.90, countEnd:5.15, bow:5.15, end:5.60
+    paper:[0, .80], cam:[0, 1.35], ring:[.42, 1.30], badge:[.86, 1.42],
+    title:1.06, titleGap:.052, titleDur:.62, dept:1.52, rule:1.58, sheen:1.72,
+    ui:1.90, walk:2.02, walkEnd:3.32, stamp:3.36, settle:3.86, countEnd:5.16,
+    bow:5.16, end:5.60
   };
 
   const q = s => document.getElementById(s);
-  const sheet=q("sheet"), crest=q("crest"), badge=crest.querySelector("img"), ring=q("ring"),
-        title=q("title"), dept=q("dept"), rule=q("rule"), walker=q("walker"), shadow=q("shadow"),
-        stamp=q("stamp"), impact=q("impact"), fill=q("fill"), secs=q("secs"), phase=q("phase"),
+  const scene=q("scene"), sheet=q("sheet"), crest=q("crest"), badge=crest.querySelector("img"),
+        ring=q("ring"), title=q("title"), dept=q("dept"), rule=q("rule"), sheen=q("sheen"),
+        sheenBar=sheen.firstElementChild, walker=q("walker"), shadow=q("shadow"),
+        stamp=q("stamp"), impact=q("impact"), status=q("status"), meter=q("meter"),
+        actions=q("actions"), fill=q("fill"), secs=q("secs"), phase=q("phase"),
         frames=[...walker.querySelectorAll(".f")];
 
-  /* ?motion=full|reduce 可覆盖系统偏好，方便两端各自预览 */
   const forced = new URLSearchParams(location.search).get("motion");
   const sysReduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const reduce = forced === "full" ? false : forced === "reduce" ? true : sysReduce;
-  const M = reduce ? 0 : 1;            // 位移/旋转/弹跳幅度系数，淡入淡出不受影响
+  const M = reduce ? 0 : 1;   // 位移/旋转/视差系数；淡入淡出与节奏不受影响
 
   const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
   const seg=(t,a,b)=>clamp((t-a)/(b-a));
-  const easeOut=t=>1-Math.pow(1-t,3);
-  const easeInOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const slowOut=t=>1-Math.pow(1-t,4);
+  const softOut=t=>1-Math.pow(1-t,3);
+  const inOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 
-  /* 欠阻尼弹簧闭式解：起点 0，终点 1，带自然回弹。确定性 → 支持任意时刻取值 */
+  /* 欠阻尼弹簧闭式解：确定性，可任意时刻取值，支持暂停与跳帧 */
   function spring(t, freq=11, zeta=.55){
     if (t <= 0) return 0;
     const w = freq*2*Math.PI, wd = w*Math.sqrt(1-zeta*zeta);
     return 1 - Math.exp(-zeta*w*t)*(Math.cos(wd*t) + (zeta*w/wd)*Math.sin(wd*t));
   }
 
-  /* 逐字标题 */
-  const letters = [...title.textContent];
-  title.textContent = "";
-  const spans = letters.map(ch => {
-    const s = document.createElement("span");
-    s.textContent = ch; title.appendChild(s); return s;
+  /* 逐字遮罩：每字包一层 overflow:hidden 的外框 */
+  const letters=[...title.textContent];
+  title.textContent="";
+  const glyphs = letters.map(ch=>{
+    const g=document.createElement("span"); g.className="g";
+    const i=document.createElement("span"); i.className="i"; i.textContent=ch;
+    g.appendChild(i); title.appendChild(g); return i;
   });
 
-  /* 布局尺寸只在需要时读一次，绝不在每帧读（offsetWidth 会触发强制回流） */
-  let SW = 0, FW = frames.map(()=>150);
+  /* 布局量缓存，绝不在每帧读（offsetWidth 会触发强制同步回流） */
+  let SW=0, SHW=118, FW=frames.map(()=>150);
   function measure(){
-    const lane = walker.parentElement;
-    SW = lane.clientWidth || 320;
+    SW = walker.parentElement.clientWidth || 320;
+    SHW = shadow.offsetWidth || 118;
     FW = frames.map(f => f.offsetWidth || 150);
   }
   addEventListener("resize", measure);
   addEventListener("load", measure);
   measure();
 
-  const step = (t,a,b)=>seg(t,a,b);
   const frameWeights = t => {
     if (t < K.walk) return [1,0,0];
     if (t > K.bow) return [0,0,1];
-    const c = seg(t, K.walk, K.walkEnd) * 3;      // 三个落脚周期
+    const c = seg(t, K.walk, K.walkEnd) * 3;
     const i = Math.min(2, Math.floor(c));
     const w = [0,0,0];
-    if (i === 2){ w[2] = 1; return w; }           // 末帧无后继，不做淡化，避免整体变淡
-    const blend = Math.sin(clamp(c - i)*Math.PI)*.45;   // 帧间交叉淡化，消除硬切
+    if (i === 2){ w[2] = 1; return w; }                 // 末帧无后继，不做淡化
+    const blend = Math.sin(clamp(c-i)*Math.PI)*.45;
     w[i] = 1-blend; w[i+1] = blend;
     return w;
   };
@@ -275,8 +299,7 @@
       el.style.left = ox+"px"; el.style.top = oy+"px";
       const ang = -Math.PI/2 + (Math.random()-.5)*2.5;
       const spd = 130 + Math.random()*330;
-      const dx = Math.cos(ang)*spd, dy = Math.sin(ang)*spd;
-      const spin = (Math.random()*900-450)|0;
+      const dx = Math.cos(ang)*spd, dy = Math.sin(ang)*spd, spin = (Math.random()*900-450)|0;
       el.animate([
         {transform:"translate(-50%,-50%) rotate(0deg)", opacity:1},
         {transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy*.55}px)) rotate(${spin*.5}deg)`, opacity:1, offset:.35},
@@ -293,43 +316,69 @@
   }
 
   function render(t){
-    /* 信纸 */
-    sheet.classList.toggle("in", t >= K.sheet);
+    /* ① 相机：整幕共享一次连续后拉，元素只在其上做视差 */
+    const cam = slowOut(seg(t, ...K.cam));
+    const camY = (1-cam) * 10 * M;
+    scene.style.transform = `translateY(${camY}px) scale(${1.035 - .035*cam})`;
 
-    /* 校徽：弹簧落下 + 描边环画出 */
-    const bs = spring(seg(t, K.badge, K.badge+.95)*1, 9, .62);
-    badge.style.opacity = seg(t, K.badge, K.badge+.30);
-    badge.style.transform = `translateY(${(1-bs)*-30*M}px) scale(${.72 + .28*bs})`;
-    ring.style.strokeDashoffset = 452*(1 - easeInOut(seg(t, K.badge+.10, K.badge+1.05)));
+    /* ② 纸面翻正：不是淡入卡片，是一张纸朝你转过来立正 */
+    const pp = slowOut(seg(t, ...K.paper));
+    sheet.style.opacity = clamp(pp*1.6);
+    sheet.style.transform =
+      `perspective(1100px) rotateX(${-22*(1-pp)*M}deg) translateY(${26*(1-pp)*M}px) scale(${.965 + .035*pp})`;
 
-    /* 标题逐字：位移 + 去模糊 */
-    spans.forEach((s,i)=>{
-      const a = K.title + i*.055;
-      const p = easeOut(seg(t, a, a+.42));
-      s.style.opacity = p;
-      s.style.transform = `translateY(${(1-p)*16*M}px)`;
-      s.style.filter = `blur(${(1-p)*6*M}px)`;
+    /* ③ 先画环（预告），再让徽章在环里显影 —— 顺序本身就是高级感 */
+    const rp = inOut(seg(t, ...K.ring));
+    ring.style.strokeDashoffset = 452*(1-rp);
+    const bp = softOut(seg(t, ...K.badge));
+    badge.style.opacity = bp;
+    badge.style.transform = `translateY(${(1-bp)*7*M}px) scale(${1.05 - .05*bp})`;
+
+    /* ④ 标题逐字从遮罩后推出（长尾减速，不用模糊） */
+    glyphs.forEach((el,i)=>{
+      const a = K.title + i*K.titleGap;
+      const p = slowOut(seg(t, a, a + K.titleDur));
+      el.style.transform = `translateY(${(1-p)*112}%)`;
+      el.style.opacity = clamp(p*2.4);
     });
-    dept.classList.toggle("in", t > K.title+.25);
-    rule.classList.toggle("in", t > K.title+.35);
+    const dp = softOut(seg(t, K.dept, K.dept+.55));
+    dept.style.opacity = dp; dept.style.transform = `translateY(${(1-dp)*8*M}px)`;
+    rule.style.width = (softOut(seg(t, K.rule, K.rule+.6))*52).toFixed(1)+"px";
 
-    /* 奶娃：走位 + 抛物线跳 + 落地挤压拉伸 */
-    const wp = easeInOut(seg(t, K.walk, K.walkEnd));
-    const x = (-.20 + wp*.34) * SW * M;
-    const land = (t - K.walk) * 1.32;
-    const hop = M ? Math.abs(Math.sin(land*Math.PI)) * (1-wp*.55) * 11 : 0;
-    const sq = M ? Math.max(0, 1 - Math.abs((land % 1) - .92) * 9) * .07 : 0;   // 触地瞬间
+    /* ⑤ 纸面高光扫过一次，给材质一个反光事件 */
+    const sp = seg(t, K.sheen, K.sheen+.85);
+    if (sp > 0 && sp < 1){
+      sheen.style.opacity = Math.sin(sp*Math.PI)*.55*M;
+      sheenBar.style.transform = `skewX(-14deg) translateX(${(sp*230-45).toFixed(1)}%)`;
+    } else sheen.style.opacity = 0;
+
+    /* ⑥ 状态文案与控件在角色进场前就位 */
+    const up = softOut(seg(t, K.ui, K.ui+.5));
+    status.style.opacity = up; status.style.transform = `translateY(${(1-up)*9*M}px)`;
+    meter.style.opacity = up;
+    actions.style.opacity = up; actions.style.transform = `translateY(${(1-up)*10*M}px)`;
+    q("foot").style.opacity = up * .9;
+
+    /* ⑦ 奶娃走入：起点必须在画外，否则入场前就穿帮露出手臂 */
+    const wp = inOut(seg(t, K.walk, K.walkEnd));
+    const xEnd = SW * .18, xStart = -(FW[0] + 26);
+    const x = reduce ? xEnd : xStart + (xEnd - xStart) * wp;
+    const cyc = (t - K.walk) * 1.15;
+    const hop = M ? Math.abs(Math.sin(cyc*Math.PI)) * (1-wp*.55) * 11 : 0;
+    const sq  = M ? Math.max(0, 1 - Math.abs((cyc % 1) - .92) * 9) * .07 : 0;
     walker.style.transform = `translate3d(${x}px,${-hop}px,0)`;
-    frames.forEach((el,i)=>{
-      const w = frameWeights(t)[i];
-      el.style.opacity = w;
-      el.style.transform = `scale(${1+sq*w}, ${1-sq*w})`;
-    });
-    const cur = frameWeights(t).map((w,i)=>[w,i]).sort((a,b)=>b[0]-a[0])[0][1];
-    shadow.style.opacity = (.10 + wp*.42) * (1 - hop/22);
-    shadow.style.transform = `translate3d(${x + FW[cur]/2 - shadow.offsetWidth/2}px,0,0) scale(${1+sq*.6},1)`;
 
-    /* 盖章：弹簧压入 + 微旋 */
+    const w = frameWeights(t);
+    frames.forEach((el,i)=>{
+      el.style.opacity = w[i];
+      el.style.transform = `scale(${1+sq*w[i]}, ${1-sq*w[i]})`;
+    });
+    let cur = 0, best = -1;
+    w.forEach((v,i)=>{ if (v > best){ best = v; cur = i; } });
+    shadow.style.opacity = (.10 + wp*.42) * (1 - hop/22);
+    shadow.style.transform = `translate3d(${x + FW[cur]/2 - SHW/2}px,0,0) scale(${1+sq*.6},1)`;
+
+    /* ⑧ 盖章：弹簧压入 + 微旋回弹 */
     const st = seg(t, K.stamp, K.stamp+.55);
     if (st > 0){
       const s = spring(st, 13, .48);
@@ -337,7 +386,7 @@
       stamp.style.transform = `scale(${.62 + .38*s + (1-s)*.12}) rotate(${-11 - 9*(1-s)*M}deg)`;
     }
 
-    /* 进度与倒计时 */
+    /* ⑨ 进度与倒计时 */
     const cp = seg(t, K.settle, K.countEnd);
     fill.style.width = (cp*100).toFixed(2)+"%";
     secs.textContent = Math.max(0, K.end - t).toFixed(1)+"s";
@@ -346,33 +395,33 @@
       : t < K.bow ? "已录取 · 即将出发" : "出发";
   }
 
-  let el = 0, last = 0, raf = 0, held = false, hidden = false, fired = false, leaving = false;
+  let el=0, last=0, raf=0, held=false, hidden=false, fired=false, leaving=false;
 
   function leave(){
     if (leaving) return;
-    leaving = true;
-    cancelAnimationFrame(raf);
+    leaving = true; cancelAnimationFrame(raf);
     render(K.end);
-    sheet.classList.add("out");
+    sheet.style.transition = "opacity .42s ease, transform .42s ease";
+    sheet.style.opacity = .35;
+    sheet.style.transform = "perspective(1100px) scale(.988)";
     setTimeout(()=>{
       location.replace(TARGET);
-      setTimeout(()=>{ location.href = TARGET; }, 900);   // replace 被拦时兜底
-    }, reduce ? 0 : 330);                                  // 留一拍淡出再走
+      setTimeout(()=>{ location.href = TARGET; }, 900);
+    }, reduce ? 0 : 340);
   }
 
   function tick(now){
     if (!last) last = now;
-    const dt = Math.min(now - last, 60);                   // 切后台回来不跳帧
+    const dt = Math.min(now - last, 60);      // 切后台回来不跳帧
     last = now;
     if (!held && !hidden) el += dt;
     const t = el/1000;
     render(t);
     if (!fired && t >= K.stamp){ fired = true; burst(); }
-    if (t >= K.bow && !leaving && t >= K.end) return leave();
+    if (t >= K.end) return leave();
     raf = requestAnimationFrame(tick);
   }
 
-  /* 点击纸面立即出发 */
   sheet.addEventListener("click", e=>{ if (!e.target.closest("button,a")) leave(); });
 
   const hold = q("hold");
@@ -390,15 +439,10 @@
   document.addEventListener("keydown", e=>{
     if (e.key === "Enter" && !e.target.closest("button,a")) leave();
   });
+  document.addEventListener("visibilitychange", ()=>{ hidden = document.hidden; last = 0; });
 
-  /* 标签页切走就暂停，回来接着演，不让人错过动画 */
-  document.addEventListener("visibilitychange", ()=>{
-    hidden = document.hidden; last = 0;
-  });
-
-  /* 动画跑完后收回 will-change，避免长期占 GPU 图层 */
-  const cleanup = ()=>[...frames, walker, badge, stamp].forEach(n=>n.style.willChange="auto");
-  setTimeout(cleanup, (K.end+.6)*1000);
+  setTimeout(()=>[scene,sheet,badge,walker,stamp,status,dept,actions,...frames]
+    .forEach(n=>n.style.willChange="auto"), (K.end+.8)*1000);
 
   render(0);
   requestAnimationFrame(tick);
