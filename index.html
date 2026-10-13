@@ -20,12 +20,12 @@
 <link rel="preload" as="image" type="image/webp" href="assets/pose2.webp" fetchpriority="high">
 <link rel="preload" as="image" type="image/webp" href="assets/badge.webp" fetchpriority="high">
 
-<noscript><meta http-equiv="refresh" content="6;url=https://www.cucn.edu.cn/"></noscript>
+<noscript><meta http-equiv="refresh" content="7;url=https://www.cucn.edu.cn/"></noscript>
 
 <style>
   :root{
     --paper:#FFFDF6; --ink:#16273F; --blue:#1B4B8D; --blue-2:#2F6FBE;
-    --gold:#C9A227; --red:#C8342A;
+    --gold:#C9A227; --red:#C8342A; --ease:cubic-bezier(.22,1,.36,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -37,118 +37,104 @@
     display:flex;flex-direction:column;overflow:auto;padding:16px;min-height:100%;
   }
   body::after{
-    content:"";position:fixed;inset:auto 0 0 0;height:26vh;
+    content:"";position:fixed;inset:auto 0 0 0;height:26vh;pointer-events:none;
     background:linear-gradient(to bottom,transparent,rgba(27,75,141,.09));
-    pointer-events:none;
   }
 
   .sheet{
     position:relative;margin:auto;flex:none;width:min(430px,94vw);
-    background:var(--paper);
-    border:1px solid rgba(27,75,141,.16);border-radius:4px;
+    background:var(--paper);border:1px solid rgba(27,75,141,.16);border-radius:4px;
     box-shadow:0 24px 60px -22px rgba(22,39,63,.34), 0 2px 0 rgba(255,255,255,.9) inset;
     padding:30px 26px 26px;text-align:center;
-    transform:translateY(14px) scale(.985);opacity:0;
-    transition:opacity .5s ease, transform .7s cubic-bezier(.2,.9,.25,1);
+    opacity:0;transform:translateY(14px) scale(.985);
+    transition:opacity .5s var(--ease), transform .7s var(--ease);
   }
   .sheet.in{opacity:1;transform:none}
+  .sheet.out{opacity:.35;transform:scale(.988);transition:opacity .42s ease,transform .42s ease}
   .sheet::before{
     content:"";position:absolute;inset:9px;border:1px solid rgba(27,75,141,.14);
     border-radius:2px;pointer-events:none;
   }
-  .sheet.shake{animation:shake .3s ease}
-  @keyframes shake{0%,100%{transform:none}30%{transform:translate(2px,-2px)}60%{transform:translate(-2px,1px)}}
 
+  /* ── 校徽 + 入场描边环 ───────────────────────── */
   .crest{position:relative;width:118px;height:118px;margin:2px auto 0}
-  .crest img{
-    position:absolute;inset:0;width:100%;height:100%;
-    transform:translateY(-26px) scale(.72);opacity:0;
-    transition:transform .8s cubic-bezier(.16,1.2,.3,1), opacity .5s ease;
-  }
-  .crest.in img{transform:none;opacity:1}
+  .crest img{position:absolute;inset:0;width:100%;height:100%;will-change:transform,opacity}
   .crest svg{position:absolute;inset:-13px;width:calc(100% + 26px);height:calc(100% + 26px);overflow:visible}
-  .crest circle{
-    fill:none;stroke:var(--blue);stroke-width:2;stroke-linecap:round;
-    stroke-dasharray:452;stroke-dashoffset:452;
-    transition:stroke-dashoffset 1.1s ease .12s;
-  }
-  .crest.in circle{stroke-dashoffset:0}
+  .crest circle{fill:none;stroke:var(--blue);stroke-width:2;stroke-linecap:round;
+    stroke-dasharray:452;stroke-dashoffset:452}
 
+  /* ── 标题逐字 ───────────────────────────────── */
   h1{margin-top:16px;font-size:31px;letter-spacing:.14em;font-weight:700;color:var(--blue)}
-  .dept{margin-top:7px;font-size:12px;letter-spacing:.3em;color:rgba(22,39,63,.5)}
-  .rule{width:52px;height:2px;background:var(--gold);margin:15px auto 0;opacity:.85}
+  h1 span{display:inline-block;opacity:0;will-change:transform,opacity,filter}
+  .dept{margin-top:7px;font-size:12px;letter-spacing:.3em;color:rgba(22,39,63,.5);
+    opacity:0;transition:opacity .6s ease .35s}
+  .dept.in{opacity:1}
+  .rule{width:0;height:2px;background:var(--gold);margin:15px auto 0;opacity:.85;
+    transition:width .7s var(--ease)}
+  .rule.in{width:52px}
 
+  /* ── 舞台：lane 裁切走路，章在 lane 外不被裁 ── */
   .stage{position:relative;height:196px;margin:6px auto 0}
+  .lane{position:absolute;inset:0;overflow:hidden}
   .walker{position:absolute;bottom:0;left:0;width:100%;height:100%;will-change:transform}
-  .walker img{
-    position:absolute;bottom:0;left:0;height:186px;width:auto;
-    opacity:0;transition:opacity .05s linear;
-  }
-  .walker img.on{opacity:1}
-  .shadow{
-    position:absolute;bottom:2px;left:0;width:118px;height:13px;border-radius:50%;
+  .walker img{position:absolute;bottom:0;left:0;height:186px;width:auto;opacity:0;
+    will-change:transform,opacity;transform-origin:50% 100%}
+  .shadow{position:absolute;bottom:2px;left:0;width:118px;height:13px;border-radius:50%;
     background:radial-gradient(50% 50% at 50% 50%, rgba(22,39,63,.26), transparent 70%);
-    will-change:transform,opacity;
-  }
+    opacity:0;will-change:transform,opacity}
 
-  .stamp{
-    position:absolute;top:14px;right:16px;width:96px;height:96px;
-    display:grid;place-items:center;
-    border:3px double var(--red);border-radius:50%;
-    color:var(--red);font-size:13px;font-weight:700;letter-spacing:.06em;line-height:1.35;
-    transform:scale(2.7) rotate(9deg);opacity:0;filter:blur(.4px);
-  }
-  .stamp.in{animation:drop .42s cubic-bezier(.2,1.5,.4,1) forwards}
-  @keyframes drop{
-    0%{transform:scale(2.7) rotate(9deg);opacity:0}
-    60%{transform:scale(.93) rotate(-13deg);opacity:1}
-    100%{transform:scale(1) rotate(-11deg);opacity:1}
-  }
+  .stamp{position:absolute;top:16px;right:14px;width:96px;height:96px;display:grid;place-items:center;
+    border:3px double var(--red);border-radius:50%;color:var(--red);
+    font-size:13px;font-weight:700;letter-spacing:.06em;line-height:1.35;
+    opacity:0;will-change:transform,opacity;filter:blur(.4px)}
+  .impact{position:absolute;top:64px;right:62px;width:0;height:0;border-radius:50%;
+    border:2px solid rgba(200,52,42,.5);opacity:0;will-change:transform,opacity}
 
   .status{margin-top:4px;font-size:15.5px;line-height:1.75;color:rgba(22,39,63,.86)}
   .status b{color:var(--blue);font-weight:700}
 
+  /* ── 进度条：带流动高光 ─────────────────────── */
   .meter{margin:16px auto 0;width:min(280px,86%)}
-  .bar{height:3px;background:rgba(27,75,141,.14);border-radius:99px;overflow:hidden}
-  .fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue-2),var(--blue));border-radius:99px}
-  .count{
-    display:flex;justify-content:space-between;margin-top:8px;font-size:11px;
-    letter-spacing:.16em;color:rgba(22,39,63,.46);font-variant-numeric:tabular-nums;
-  }
+  .bar{position:relative;height:4px;background:rgba(27,75,141,.13);border-radius:99px;overflow:hidden}
+  .fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:99px;
+    background:linear-gradient(90deg,var(--blue-2),var(--blue));will-change:width}
+  .fill::after{content:"";position:absolute;inset:0;border-radius:99px;
+    background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
+    transform:translateX(-100%);animation:sheen 1.5s linear infinite}
+  @keyframes sheen{to{transform:translateX(100%)}}
+  .count{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;
+    letter-spacing:.16em;color:rgba(22,39,63,.46);font-variant-numeric:tabular-nums}
 
   .actions{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
-  button,a.btn{
-    font:inherit;font-size:13.5px;letter-spacing:.08em;padding:10px 18px;border-radius:99px;
+  button,a.btn{font:inherit;font-size:13.5px;letter-spacing:.08em;padding:10px 18px;border-radius:99px;
     cursor:pointer;border:1px solid var(--blue);background:transparent;color:var(--blue);
-    transition:background .18s ease,color .18s ease,transform .12s ease;
-    text-decoration:none;-webkit-tap-highlight-color:transparent;user-select:none;
-  }
+    transition:background .18s ease,color .18s ease,transform .12s ease,border-color .18s ease;
+    text-decoration:none;-webkit-tap-highlight-color:transparent;user-select:none}
   a.btn{background:var(--blue);color:var(--paper)}
-  button:active,a.btn:active{transform:translateY(1px)}
-  a.btn:hover{background:#164077}
+  button:active,a.btn:active{transform:translateY(1px) scale(.985)}
+  a.btn:hover{background:#164077;border-color:#164077}
   button:hover{background:rgba(27,75,141,.07)}
   :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 
   .foot{margin:16px 0 4px;text-align:center;font-size:11px;color:rgba(22,39,63,.4);flex:none}
-  .foot button{border:0;background:none;color:inherit;font-size:inherit;text-decoration:underline;padding:4px 8px;letter-spacing:.04em}
+  .foot button{border:0;background:none;color:inherit;font-size:inherit;text-decoration:underline;
+    padding:4px 8px;letter-spacing:.04em}
 
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-  .confetti i{position:absolute;width:7px;height:11px;border-radius:1px;opacity:0;will-change:transform,opacity}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+  .confetti i{position:absolute;width:7px;height:11px;border-radius:1px;will-change:transform,opacity}
 
-  dialog{
-    border:1px solid rgba(27,75,141,.2);border-radius:6px;padding:26px 24px;max-width:390px;width:88vw;
+  dialog{border:1px solid rgba(27,75,141,.2);border-radius:6px;padding:26px 24px;max-width:390px;width:88vw;
     color:var(--ink);background:var(--paper);font-size:14px;line-height:1.85;
-    box-shadow:0 30px 70px -20px rgba(22,39,63,.4);
-  }
+    box-shadow:0 30px 70px -20px rgba(22,39,63,.4)}
   dialog::backdrop{background:rgba(22,39,63,.42);backdrop-filter:blur(2px)}
   dialog h2{font-size:16px;color:var(--blue);margin-bottom:10px;letter-spacing:.08em}
-  dialog p{color:rgba(22,39,63,.78)}
-  dialog p+p{margin-top:9px}
+  dialog p{color:rgba(22,39,63,.78)} dialog p+p{margin-top:9px}
   dialog button{margin-top:18px;width:100%}
 
   @media (max-height:660px){
     .stage{height:150px}.walker img{height:142px}.crest{width:92px;height:92px}
     h1{font-size:26px}.sheet{padding:20px 20px 18px}
+    .impact{top:56px;right:56px}
   }
   @media (max-height:480px){
     .stage{height:112px}.walker img{height:106px}.crest{width:68px;height:68px}
@@ -157,10 +143,8 @@
     .status{font-size:13.5px;line-height:1.5}.sheet{padding:14px 18px 14px}
     .meter{margin-top:10px}.actions{margin-top:12px}
     button,a.btn{padding:8px 14px;font-size:12.5px}
-  }
-  @media (prefers-reduced-motion:reduce){
-    *{animation-duration:.01ms !important;transition-duration:.01ms !important}
-    .confetti{display:none}
+    .stamp{width:78px;height:78px;font-size:11px;top:8px;right:8px}
+    .impact{top:47px;right:47px}
   }
 </style>
 </head>
@@ -168,29 +152,32 @@
 
 <main class="sheet" id="sheet">
   <div class="crest" id="crest">
-    <svg viewBox="0 0 150 150" aria-hidden="true"><circle cx="75" cy="75" r="72"/></svg>
+    <svg viewBox="0 0 150 150" aria-hidden="true"><circle id="ring" cx="75" cy="75" r="72"/></svg>
     <img src="assets/badge.webp" alt="南京传媒学院校徽" width="118" height="118">
   </div>
 
-  <h1>中国奶娃大学</h1>
-  <p class="dept">新 生 护 送 中 心</p>
-  <div class="rule"></div>
+  <h1 id="title">中国奶娃大学</h1>
+  <p class="dept" id="dept">新 生 护 送 中 心</p>
+  <div class="rule" id="rule"></div>
 
   <div class="stage">
-    <div class="walker" id="walker">
-      <img src="assets/pose1.webp" alt="" class="f">
-      <img src="assets/pose2.webp" alt="奶娃挥手欢迎你" class="f">
-      <img src="assets/pose3.webp" alt="" class="f">
+    <div class="lane">
+      <div class="walker" id="walker">
+        <img src="assets/pose1.webp" alt="" class="f">
+        <img src="assets/pose2.webp" alt="奶娃挥手欢迎你" class="f">
+        <img src="assets/pose3.webp" alt="" class="f">
+      </div>
+      <div class="shadow" id="shadow"></div>
     </div>
-    <div class="shadow" id="shadow"></div>
     <div class="stamp" id="stamp" aria-hidden="true">录取<br>专用章</div>
+    <div class="impact" id="impact" aria-hidden="true"></div>
   </div>
 
   <p class="status" id="status" aria-live="polite">奶娃正在护送你前往<br><b>南京传媒学院</b></p>
 
   <div class="meter">
     <div class="bar"><div class="fill" id="fill"></div></div>
-    <div class="count"><span id="phase">正在入 学</span><span id="secs">5.2s</span></div>
+    <div class="count"><span id="phase">正在入 学</span><span id="secs">5.6s</span></div>
   </div>
 
   <div class="actions">
@@ -214,111 +201,207 @@
 <script>
 (() => {
   const TARGET = "https://www.cucn.edu.cn/";
-  const DUR = 5200;
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const $ = id => document.getElementById(id);
 
-  const sheet=$("sheet"), crest=$("crest"), walker=$("walker"), shadow=$("shadow"),
-        stage=walker.parentElement,
-        stamp=$("stamp"), fill=$("fill"), secs=$("secs"), phase=$("phase"),
+  /* 时间轴（秒）——所有值都由 t 的纯函数导出，可暂停、可跳、与帧率无关 */
+  const K = {
+    sheet:.00, badge:.12, title:.42, walk:.52, walkEnd:2.30,
+    stamp:2.34, settle:2.90, countEnd:5.15, bow:5.15, end:5.60
+  };
+
+  const q = s => document.getElementById(s);
+  const sheet=q("sheet"), crest=q("crest"), badge=crest.querySelector("img"), ring=q("ring"),
+        title=q("title"), dept=q("dept"), rule=q("rule"), walker=q("walker"), shadow=q("shadow"),
+        stamp=q("stamp"), impact=q("impact"), fill=q("fill"), secs=q("secs"), phase=q("phase"),
         frames=[...walker.querySelectorAll(".f")];
 
-  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+  /* ?motion=full|reduce 可覆盖系统偏好，方便两端各自预览 */
+  const forced = new URLSearchParams(location.search).get("motion");
+  const sysReduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = forced === "full" ? false : forced === "reduce" ? true : sysReduce;
+  const M = reduce ? 0 : 1;            // 位移/旋转/弹跳幅度系数，淡入淡出不受影响
+
+  const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+  const seg=(t,a,b)=>clamp((t-a)/(b-a));
   const easeOut=t=>1-Math.pow(1-t,3);
-  const T={walk:.06, stamp:.46};
+  const easeInOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 
-  let start=0, paused=false, done=false, raf=0, stamped=false;
-
-  function frameAt(p){
-    if (p < T.walk) return 0;
-    if (p > .92) return 2;
-    return Math.floor((p - T.walk) * 26) % 2;
+  /* 欠阻尼弹簧闭式解：起点 0，终点 1，带自然回弹。确定性 → 支持任意时刻取值 */
+  function spring(t, freq=11, zeta=.55){
+    if (t <= 0) return 0;
+    const w = freq*2*Math.PI, wd = w*Math.sqrt(1-zeta*zeta);
+    return 1 - Math.exp(-zeta*w*t)*(Math.cos(wd*t) + (zeta*w/wd)*Math.sin(wd*t));
   }
+
+  /* 逐字标题 */
+  const letters = [...title.textContent];
+  title.textContent = "";
+  const spans = letters.map(ch => {
+    const s = document.createElement("span");
+    s.textContent = ch; title.appendChild(s); return s;
+  });
+
+  /* 布局尺寸只在需要时读一次，绝不在每帧读（offsetWidth 会触发强制回流） */
+  let SW = 0, FW = frames.map(()=>150);
+  function measure(){
+    const lane = walker.parentElement;
+    SW = lane.clientWidth || 320;
+    FW = frames.map(f => f.offsetWidth || 150);
+  }
+  addEventListener("resize", measure);
+  addEventListener("load", measure);
+  measure();
+
+  const step = (t,a,b)=>seg(t,a,b);
+  const frameWeights = t => {
+    if (t < K.walk) return [1,0,0];
+    if (t > K.bow) return [0,0,1];
+    const c = seg(t, K.walk, K.walkEnd) * 3;      // 三个落脚周期
+    const i = Math.min(2, Math.floor(c));
+    const w = [0,0,0];
+    if (i === 2){ w[2] = 1; return w; }           // 末帧无后继，不做淡化，避免整体变淡
+    const blend = Math.sin(clamp(c - i)*Math.PI)*.45;   // 帧间交叉淡化，消除硬切
+    w[i] = 1-blend; w[i+1] = blend;
+    return w;
+  };
 
   function burst(){
-    if (reduced) return;
-    const colors=["#1B4B8D","#C9A227","#C8342A","#2F6FBE","#F0C24A"];
-    for (let i=0;i<46;i++){
-      const s=document.createElement("i");
-      s.style.left=(10+Math.random()*80)+"vw";
-      s.style.background=colors[i%colors.length];
-      s.animate(
-        [{transform:"translateY(-12vh) rotate(0deg)",opacity:1},
-         {transform:`translateY(${58+Math.random()*40}vh) rotate(${(Math.random()*720-360)|0}deg)`,opacity:0}],
-        {duration:1500+Math.random()*1400, easing:"cubic-bezier(.2,.6,.4,1)",
-         delay:Math.random()*420, fill:"forwards"}
-      );
-      $("confetti").appendChild(s);
-      setTimeout(()=>s.remove(),3600);
+    if (!M) return;
+    const r = stamp.getBoundingClientRect();
+    const ox = r.left + r.width/2, oy = r.top + r.height/2;
+    const colors = ["#1B4B8D","#C9A227","#C8342A","#2F6FBE","#F0C24A"];
+    for (let i=0;i<52;i++){
+      const el = document.createElement("i");
+      el.style.background = colors[i%colors.length];
+      el.style.left = ox+"px"; el.style.top = oy+"px";
+      const ang = -Math.PI/2 + (Math.random()-.5)*2.5;
+      const spd = 130 + Math.random()*330;
+      const dx = Math.cos(ang)*spd, dy = Math.sin(ang)*spd;
+      const spin = (Math.random()*900-450)|0;
+      el.animate([
+        {transform:"translate(-50%,-50%) rotate(0deg)", opacity:1},
+        {transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy*.55}px)) rotate(${spin*.5}deg)`, opacity:1, offset:.35},
+        {transform:`translate(calc(-50% + ${dx*1.45}px), calc(-50% + ${-dy*.4+620}px)) rotate(${spin}deg)`, opacity:0}
+      ], {duration:1500+Math.random()*1100, easing:"cubic-bezier(.16,.62,.3,1)",
+          delay:Math.random()*180, fill:"forwards"});
+      q("confetti").appendChild(el);
+      setTimeout(()=>el.remove(), 3400);
     }
+    impact.animate(
+      [{transform:"translate(-50%,-50%) scale(.2)",opacity:.9},
+       {transform:"translate(-50%,-50%) scale(3.4)",opacity:0}],
+      {duration:620, easing:"cubic-bezier(.2,.8,.3,1)", fill:"forwards"});
   }
 
-  function render(p){
-    const walkP=clamp((p-T.walk)/(.44-T.walk),0,1);
-    const f=frameAt(p);
-    frames.forEach((el,i)=>el.classList.toggle("on", i===f));
+  function render(t){
+    /* 信纸 */
+    sheet.classList.toggle("in", t >= K.sheet);
 
-    const hop=Math.abs(Math.sin(walkP*Math.PI*5))*(1-walkP)*9;
-    const x=easeOut(walkP)*stage.clientWidth*.17;
-    walker.style.transform=`translateX(${x}px) translateY(${-hop}px)`;
+    /* 校徽：弹簧落下 + 描边环画出 */
+    const bs = spring(seg(t, K.badge, K.badge+.95)*1, 9, .62);
+    badge.style.opacity = seg(t, K.badge, K.badge+.30);
+    badge.style.transform = `translateY(${(1-bs)*-30*M}px) scale(${.72 + .28*bs})`;
+    ring.style.strokeDashoffset = 452*(1 - easeInOut(seg(t, K.badge+.10, K.badge+1.05)));
 
-    const fw=frames[f].offsetWidth||150;
-    shadow.style.transform=`translateX(${x+fw/2-shadow.offsetWidth/2}px) scaleX(${1-hop/70})`;
-    shadow.style.opacity=.25+walkP*.55;
+    /* 标题逐字：位移 + 去模糊 */
+    spans.forEach((s,i)=>{
+      const a = K.title + i*.055;
+      const p = easeOut(seg(t, a, a+.42));
+      s.style.opacity = p;
+      s.style.transform = `translateY(${(1-p)*16*M}px)`;
+      s.style.filter = `blur(${(1-p)*6*M}px)`;
+    });
+    dept.classList.toggle("in", t > K.title+.25);
+    rule.classList.toggle("in", t > K.title+.35);
 
-    crest.classList.toggle("in", p>.01);
-    if (p > T.stamp && !stamped){
-      stamped=true;
-      stamp.classList.add("in");
-      burst();
-      sheet.classList.add("shake");
-      setTimeout(()=>sheet.classList.remove("shake"),340);
+    /* 奶娃：走位 + 抛物线跳 + 落地挤压拉伸 */
+    const wp = easeInOut(seg(t, K.walk, K.walkEnd));
+    const x = (-.20 + wp*.34) * SW * M;
+    const land = (t - K.walk) * 1.32;
+    const hop = M ? Math.abs(Math.sin(land*Math.PI)) * (1-wp*.55) * 11 : 0;
+    const sq = M ? Math.max(0, 1 - Math.abs((land % 1) - .92) * 9) * .07 : 0;   // 触地瞬间
+    walker.style.transform = `translate3d(${x}px,${-hop}px,0)`;
+    frames.forEach((el,i)=>{
+      const w = frameWeights(t)[i];
+      el.style.opacity = w;
+      el.style.transform = `scale(${1+sq*w}, ${1-sq*w})`;
+    });
+    const cur = frameWeights(t).map((w,i)=>[w,i]).sort((a,b)=>b[0]-a[0])[0][1];
+    shadow.style.opacity = (.10 + wp*.42) * (1 - hop/22);
+    shadow.style.transform = `translate3d(${x + FW[cur]/2 - shadow.offsetWidth/2}px,0,0) scale(${1+sq*.6},1)`;
+
+    /* 盖章：弹簧压入 + 微旋 */
+    const st = seg(t, K.stamp, K.stamp+.55);
+    if (st > 0){
+      const s = spring(st, 13, .48);
+      stamp.style.opacity = clamp(st*4);
+      stamp.style.transform = `scale(${.62 + .38*s + (1-s)*.12}) rotate(${-11 - 9*(1-s)*M}deg)`;
     }
 
-    fill.style.width=(clamp(p,0,1)*100).toFixed(1)+"%";
-    secs.textContent=Math.max(0,(1-p)*DUR/1000).toFixed(1)+"s";
-    phase.textContent = p<T.walk ? "正在入 学"
-                      : p<T.stamp ? "护送中"
-                      : p<.92 ? "已录取 · 即将出发" : "出发";
+    /* 进度与倒计时 */
+    const cp = seg(t, K.settle, K.countEnd);
+    fill.style.width = (cp*100).toFixed(2)+"%";
+    secs.textContent = Math.max(0, K.end - t).toFixed(1)+"s";
+    phase.textContent = t < K.walk ? "正在入 学"
+      : t < K.stamp ? "护送中"
+      : t < K.bow ? "已录取 · 即将出发" : "出发";
   }
+
+  let el = 0, last = 0, raf = 0, held = false, hidden = false, fired = false, leaving = false;
 
   function leave(){
-    if (done) return;
-    done=true; cancelAnimationFrame(raf); render(1);
-    location.replace(TARGET);
-    setTimeout(()=>{ location.href=TARGET; },900);
+    if (leaving) return;
+    leaving = true;
+    cancelAnimationFrame(raf);
+    render(K.end);
+    sheet.classList.add("out");
+    setTimeout(()=>{
+      location.replace(TARGET);
+      setTimeout(()=>{ location.href = TARGET; }, 900);   // replace 被拦时兜底
+    }, reduce ? 0 : 330);                                  // 留一拍淡出再走
   }
 
   function tick(now){
-    if (!start) start=now;
-    if (paused) start+=16;
-    const p=(now-start)/DUR;
-    render(Math.min(p,1));
-    if (p>=1) return leave();
-    raf=requestAnimationFrame(tick);
+    if (!last) last = now;
+    const dt = Math.min(now - last, 60);                   // 切后台回来不跳帧
+    last = now;
+    if (!held && !hidden) el += dt;
+    const t = el/1000;
+    render(t);
+    if (!fired && t >= K.stamp){ fired = true; burst(); }
+    if (t >= K.bow && !leaving && t >= K.end) return leave();
+    raf = requestAnimationFrame(tick);
   }
 
+  /* 点击纸面立即出发 */
   sheet.addEventListener("click", e=>{ if (!e.target.closest("button,a")) leave(); });
 
-  const hold=$("hold");
-  const grab=on=>{ paused=on; hold.textContent=on?"松开了，继续":"按住不走"; };
+  const hold = q("hold");
+  const grab = on => { held = on; hold.textContent = on ? "松开了，继续" : "按住不走"; };
   hold.addEventListener("pointerdown", e=>{ e.preventDefault(); grab(true); });
   ["pointerup","pointercancel","pointerleave"].forEach(ev=>hold.addEventListener(ev,()=>grab(false)));
 
-  $("go").addEventListener("click", ()=>{ done=true; cancelAnimationFrame(raf); });
+  q("go").addEventListener("click", ()=>{ cancelAnimationFrame(raf); });
 
-  const dlg=$("about");
-  $("about-btn").addEventListener("click", ()=>dlg.showModal());
-  $("close-btn").addEventListener("click", ()=>dlg.close());
-  dlg.addEventListener("click", e=>{ if (e.target===dlg) dlg.close(); });
+  const dlg = q("about");
+  q("about-btn").addEventListener("click", ()=>{ dlg.showModal(); hidden = true; });
+  q("close-btn").addEventListener("click", ()=>{ dlg.close(); hidden = false; last = 0; });
+  dlg.addEventListener("click", e=>{ if (e.target === dlg){ dlg.close(); hidden = false; last = 0; } });
 
   document.addEventListener("keydown", e=>{
-    if (e.key==="Enter" && !e.target.closest("button,a")) leave();
+    if (e.key === "Enter" && !e.target.closest("button,a")) leave();
   });
 
-  sheet.classList.add("in");
-  if (reduced){ render(1); setTimeout(leave,5000); }
-  else requestAnimationFrame(tick);
+  /* 标签页切走就暂停，回来接着演，不让人错过动画 */
+  document.addEventListener("visibilitychange", ()=>{
+    hidden = document.hidden; last = 0;
+  });
+
+  /* 动画跑完后收回 will-change，避免长期占 GPU 图层 */
+  const cleanup = ()=>[...frames, walker, badge, stamp].forEach(n=>n.style.willChange="auto");
+  setTimeout(cleanup, (K.end+.6)*1000);
+
+  render(0);
+  requestAnimationFrame(tick);
 })();
 </script>
 </body>
