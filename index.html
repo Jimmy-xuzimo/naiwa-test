@@ -93,10 +93,13 @@
   /* ── 舞台：lane 裁切走路，印章在 lane 外不被裁 ── */
   .stage{position:relative;height:196px;margin:6px auto 0}
   .lane{position:absolute;inset:0;overflow:hidden}
-  .walker{position:absolute;bottom:0;left:0;width:100%;height:100%;will-change:transform}
-  .walker img{position:absolute;bottom:0;left:0;height:186px;width:auto;opacity:0;
-    will-change:transform,opacity;transform-origin:50% 100%}
-  .shadow{position:absolute;bottom:2px;left:0;width:118px;height:13px;border-radius:50%;
+  /* 三帧共用同一中心线：换帧时身体不会横向跳位，剪辑点才藏得住 */
+  .walker{position:absolute;bottom:0;left:0;width:100%;height:100%;
+    transform-origin:50% 100%;will-change:transform}
+  .walker img{position:absolute;bottom:0;left:50%;height:186px;width:auto;opacity:0;
+    transform:translateX(-50%);transform-origin:50% 100%;will-change:transform,opacity}
+  .shadow{position:absolute;bottom:2px;left:50%;width:118px;height:13px;margin-left:-59px;
+    border-radius:50%;
     background:radial-gradient(50% 50% at 50% 50%, rgba(22,39,63,.26), transparent 70%);
     opacity:0;will-change:transform,opacity}
 
@@ -196,7 +199,7 @@
 
   <div class="meter" id="meter">
     <div class="bar"><div class="fill" id="fill"></div></div>
-    <div class="count"><span id="phase">正在入 学</span><span id="secs">5.6s</span></div>
+    <div class="count"><span id="phase">正在入 学</span><span id="secs">5.9s</span></div>
   </div>
 
   <div class="actions" id="actions">
@@ -226,8 +229,10 @@
   const K = {
     paper:[0, .80], cam:[0, 1.35], ring:[.42, 1.30], badge:[.86, 1.42],
     title:1.06, titleGap:.052, titleDur:.62, dept:1.52, rule:1.58, sheen:1.72,
-    ui:1.90, walk:2.02, walkEnd:3.32, stamp:3.36, settle:3.86, countEnd:5.16,
-    bow:5.16, end:5.60
+    ui:1.90,
+    /* 角色三段表演：走入 → 招手 → 待命 */
+    walk:[2.02, 2.74], cut1:2.80, wave:[2.86, 3.52], cut2:3.58,
+    idle:3.64, stamp:3.86, settle:4.36, countEnd:5.44, bow:5.44, end:5.86
   };
 
   const q = s => document.getElementById(s);
@@ -266,27 +271,55 @@
   });
 
   /* 布局量缓存，绝不在每帧读（offsetWidth 会触发强制同步回流） */
-  let SW=0, SHW=118, FW=frames.map(()=>150);
-  function measure(){
-    SW = walker.parentElement.clientWidth || 320;
-    SHW = shadow.offsetWidth || 118;
-    FW = frames.map(f => f.offsetWidth || 150);
-  }
+  let SW = 0;
+  function measure(){ SW = walker.parentElement.clientWidth || 320; }
   addEventListener("resize", measure);
   addEventListener("load", measure);
   measure();
 
-  const frameWeights = t => {
-    if (t < K.walk) return [1,0,0];
-    if (t > K.bow) return [0,0,1];
-    const c = seg(t, K.walk, K.walkEnd) * 3;
-    const i = Math.min(2, Math.floor(c));
-    const w = [0,0,0];
-    if (i === 2){ w[2] = 1; return w; }                 // 末帧无后继，不做淡化
-    const blend = Math.sin(clamp(c-i)*Math.PI)*.45;
-    w[i] = 1-blend; w[i+1] = blend;
-    return w;
-  };
+  /* 衰减正弦：τ=0 时为 0，先冲出去再收敛回来 —— 保证与上一段无缝衔接 */
+  const damped = (τ, f, z) => Math.exp(-z*τ) * Math.sin(f*τ);
+  /* 短脉冲：用于「压缩」帧，把换图藏进重心下沉里 */
+  const pulse = (t, c, w) => { const d = Math.abs(t-c)/w; return d>=1 ? 0 : (1-d)*(1-d); };
+
+  /* 角色三段表演：走入 → 招手 → 待命。每段只允许一种运动，不叠加 */
+  function actor(t){
+    const xEnd = -SW*.20, xStart = -(SW*.5 + 70);
+    let idx = 0, x = xStart, rot = 0, sy = 1, sx = 1;
+
+    if (t < K.walk[0]){
+      x = xStart;
+    } else if (t < K.cut1){
+      idx = 0;
+      const e = inOut(seg(t, ...K.walk));            // 慢起步：easeOut 会让角色像被弹射出来
+      x = xStart + (xEnd - xStart) * e;
+      rot = -(1 - e) * 3.4 * M;                      // 行进中前倾，停步才立正
+    } else if (t < K.wave[0]){
+      idx = 0;
+      const τ = t - K.walk[1];
+      x = xEnd + damped(τ, 19, 11) * 26 * M;           // 急停过冲回弹
+      const c = pulse(t, K.cut1, .11);
+      sy = 1 - c*.055*M; sx = 1 + c*.050*M;          // 压到最低点时换帧
+    } else if (t < K.cut2){
+      idx = 1;
+      x = xEnd;
+      rot = damped(t - K.wave[0], 7.6, 2.2) * 4.6 * M; // 以脚为轴的两下招呼
+      const c = pulse(t, K.cut2, .11);
+      sy = 1 - c*.050*M; sx = 1 + c*.045*M;
+    } else {
+      idx = 2;
+      x = xEnd;
+      const τ = t - K.idle;
+      sy = 1 + Math.sin(2*Math.PI*τ/2.6)*.013;       // 待机呼吸，消掉「站着不动」的死感
+      sx = 1 - Math.sin(2*Math.PI*τ/2.6)*.006;
+      sy -= pulse(t, K.stamp + .07, .13) * .030 * M; // 章落下时他跟着沉一下，像在看着
+      if (t >= K.bow){
+        const b = seg(t, K.bow, K.bow + .30);
+        rot = Math.sin(b*Math.PI) * 7 * M;           // 鞠躬：去而不返地收在 0
+      }
+    }
+    return { idx, x: reduce ? xEnd : x, rot, sy, sx };
+  }
 
   function burst(){
     if (!M) return;
@@ -359,24 +392,20 @@
     actions.style.opacity = up; actions.style.transform = `translateY(${(1-up)*10*M}px)`;
     q("foot").style.opacity = up * .9;
 
-    /* ⑦ 奶娃走入：起点必须在画外，否则入场前就穿帮露出手臂 */
-    const wp = inOut(seg(t, K.walk, K.walkEnd));
-    const xEnd = SW * .18, xStart = -(FW[0] + 26);
-    const x = reduce ? xEnd : xStart + (xEnd - xStart) * wp;
-    const cyc = (t - K.walk) * 1.15;
-    const hop = M ? Math.abs(Math.sin(cyc*Math.PI)) * (1-wp*.55) * 11 : 0;
-    const sq  = M ? Math.max(0, 1 - Math.abs((cyc % 1) - .92) * 9) * .07 : 0;
-    walker.style.transform = `translate3d(${x}px,${-hop}px,0)`;
-
-    const w = frameWeights(t);
+    /* ⑦ 角色：走入 → 招手 → 待命 → 鞠躬，每段只允许一种运动 */
+    const a = actor(t);
+    walker.style.transform = `translate3d(${a.x.toFixed(2)}px,0,0) rotate(${a.rot.toFixed(3)}deg)`;
     frames.forEach((el,i)=>{
-      el.style.opacity = w[i];
-      el.style.transform = `scale(${1+sq*w[i]}, ${1-sq*w[i]})`;
+      const on = i === a.idx && t >= K.walk[0];
+      el.style.opacity = on ? 1 : 0;
+      el.style.transform = on
+        ? `translateX(-50%) scale(${a.sx.toFixed(4)},${a.sy.toFixed(4)})`
+        : "translateX(-50%)";
     });
-    let cur = 0, best = -1;
-    w.forEach((v,i)=>{ if (v > best){ best = v; cur = i; } });
-    shadow.style.opacity = (.10 + wp*.42) * (1 - hop/22);
-    shadow.style.transform = `translate3d(${x + FW[cur]/2 - SHW/2}px,0,0) scale(${1+sq*.6},1)`;
+    const show = softOut(seg(t, K.walk[0], K.walk[0] + .30));
+    /* 素材自带接触阴影，这里只补一层很淡的接地感，避免两重影子 */
+    shadow.style.opacity = (.20 * show).toFixed(3);
+    shadow.style.transform = `translateX(${a.x.toFixed(2)}px) scaleX(${(1 + (1 - a.sy) * 2.6).toFixed(3)})`;
 
     /* ⑧ 盖章：弹簧压入 + 微旋回弹 */
     const st = seg(t, K.stamp, K.stamp+.55);
@@ -390,7 +419,7 @@
     const cp = seg(t, K.settle, K.countEnd);
     fill.style.width = (cp*100).toFixed(2)+"%";
     secs.textContent = Math.max(0, K.end - t).toFixed(1)+"s";
-    phase.textContent = t < K.walk ? "正在入 学"
+    phase.textContent = t < K.walk[0] ? "正在入 学"
       : t < K.stamp ? "护送中"
       : t < K.bow ? "已录取 · 即将出发" : "出发";
   }
