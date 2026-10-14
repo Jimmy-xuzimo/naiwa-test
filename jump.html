@@ -1,0 +1,1558 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>正在前往 · 南京传媒学院</title>
+<meta name="description" content="中国奶娃大学 → 南京传媒学院，3D 校门报到日跳转。">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1B4B8D">
+<link rel="icon" href="favicon.ico" sizes="any">
+<noscript><meta http-equiv="refresh" content="6;url=https://www.cucn.edu.cn/"></noscript>
+<style>
+  :root{--blue:#1B4B8D;--gold:#C9A227}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0E1A2B}
+  body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    color:#fff;-webkit-font-smoothing:antialiased}
+  #gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  #gl.drag{cursor:grabbing}
+  .bar{position:fixed;top:0;left:0;right:0;height:46px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 14px;z-index:5;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(8,16,28,.6),transparent)}
+  .bar b{font-size:13px;font-weight:600;letter-spacing:.22em;text-shadow:0 1px 6px rgba(0,0,0,.55)}
+  .bar a{pointer-events:auto;font-size:12px;letter-spacing:.1em;color:#EAF1FA;text-decoration:none;
+    border:1px solid rgba(255,255,255,.32);border-radius:99px;padding:6px 13px;
+    background:rgba(10,22,38,.62);transition:background .2s,border-color .2s}
+  .bar a:hover{background:rgba(27,75,141,.6);border-color:rgba(255,255,255,.6)}
+  .hud{position:fixed;left:0;right:0;bottom:0;padding:0 14px 16px;z-index:5;display:flex;
+    flex-direction:column;align-items:center;gap:10px;pointer-events:none}
+  .tip{font-size:11.5px;letter-spacing:.16em;color:rgba(255,255,255,.7);
+    text-shadow:0 1px 6px rgba(0,0,0,.6);transition:opacity .6s}
+  .tip.hide{opacity:0}
+  .row{display:flex;gap:9px;pointer-events:auto;flex-wrap:wrap;justify-content:center}
+  .row button{font:inherit;font-size:12px;letter-spacing:.1em;color:#fff;cursor:pointer;
+    padding:8px 15px;border-radius:99px;border:1px solid rgba(255,255,255,.3);
+    background:rgba(10,22,38,.66);
+    transition:background .2s,transform .12s}
+  .row button:active{transform:translateY(1px) scale(.98)}
+  .row button:hover{background:rgba(27,75,141,.6)}
+  .row button.primary{background:var(--blue);border-color:transparent}
+  #load{position:fixed;inset:0;z-index:20;display:grid;place-items:center;
+    background:radial-gradient(120% 90% at 50% 0%,#17304F 0%,#0B1726 70%);transition:opacity .7s}
+  #load.out{opacity:0;pointer-events:none}
+  #load div{text-align:center}
+  #load p{font-size:12px;letter-spacing:.3em;color:rgba(255,255,255,.6);margin-top:14px;line-height:2}
+  #load .sp{width:34px;height:34px;margin:0 auto;border-radius:50%;
+    border:2px solid rgba(255,255,255,.18);border-top-color:var(--gold);animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  dialog{border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:24px;max-width:380px;width:88vw;
+    background:#12233A;color:#E8EFF8;font-size:13.5px;line-height:1.85}
+  dialog::backdrop{background:rgba(6,12,22,.72)}
+  dialog h2{font-size:15px;letter-spacing:.1em;margin-bottom:10px}
+  dialog p{color:rgba(232,239,248,.8)} dialog p+p{margin-top:8px}
+  dialog button{margin-top:16px;width:100%;font:inherit;font-size:13px;padding:9px;border-radius:99px;
+    border:1px solid rgba(255,255,255,.24);background:transparent;color:#fff;cursor:pointer}
+  dialog button:hover{background:rgba(255,255,255,.1)}
+  /* ── 跳转页专用 ── */
+  .bar{justify-content:space-between}
+  .bar .to{font-size:12px;letter-spacing:.14em;color:rgba(255,255,255,.9);
+    text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.8)}
+  .bar .to i{font-style:normal;color:var(--gold)}
+  .bar .ab{pointer-events:auto;font:inherit;font-size:12px;letter-spacing:.1em;
+    color:#EAF1FA;cursor:pointer;border:1px solid rgba(255,255,255,.32);border-radius:99px;
+    padding:6px 13px;background:rgba(10,22,38,.62);transition:background .2s,border-color .2s}
+  .bar .ab:hover{background:rgba(27,75,141,.6);border-color:rgba(255,255,255,.6)}
+  .jp{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:0 16px 16px;
+    display:flex;flex-direction:column;align-items:center;gap:9px;pointer-events:none;
+    background:linear-gradient(to top,rgba(6,14,26,.8),rgba(6,14,26,.3) 55%,transparent)}
+  .ring{width:42px;height:42px;transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:3;stroke-linecap:round}
+  .ring .bg{stroke:rgba(255,255,255,.16)}
+  .ring .fg{stroke:var(--gold);transition:stroke-dashoffset .18s linear}
+  .jp .who{font-size:12.5px;letter-spacing:.2em;color:rgba(255,255,255,.72);
+    text-shadow:0 1px 6px rgba(0,0,0,.7)}
+  .jp .who b{color:#fff;font-weight:600;letter-spacing:.06em}
+  .jp .hint{font-size:11.5px;letter-spacing:.14em;color:rgba(255,255,255,.5)}
+  .go{pointer-events:auto;font:inherit;font-size:13px;letter-spacing:.12em;color:#fff;
+    cursor:pointer;padding:11px 30px;border-radius:99px;border:1px solid rgba(255,255,255,.34);
+    background:rgba(10,22,38,.72);transition:background .2s,transform .12s}
+  .go:hover{background:var(--blue);border-color:transparent}
+  .go:active{transform:translateY(1px) scale(.98)}
+  #sub{position:fixed;left:0;right:0;top:5.5%;z-index:6;text-align:center;pointer-events:none;
+    opacity:0;transition:opacity .9s ease}
+  #sub.on{opacity:1}
+  #sub b{display:block;font-size:clamp(22px,5.4vw,40px);font-weight:650;letter-spacing:.06em;
+    text-shadow:0 2px 24px rgba(0,0,0,.85)}
+  #sub span{display:block;margin-top:12px;font-size:13px;letter-spacing:.34em;
+    color:rgba(255,255,255,.76);text-shadow:0 1px 10px rgba(0,0,0,.85)}
+  .hold{position:fixed;left:0;right:0;top:46%;z-index:7;text-align:center;pointer-events:none;
+    opacity:0;transition:opacity .25s}
+  .hold.on{opacity:1}
+  .hold span{font-size:12px;letter-spacing:.3em;color:#fff;
+    background:rgba(8,16,28,.72);padding:8px 18px;border-radius:99px}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="bar"><b>中国奶娃大学</b><button class="ab" id="about-btn" type="button">关于</button></div>
+<div class="jp">
+  <svg class="ring" viewBox="0 0 52 52" aria-hidden="true">
+    <circle class="bg" cx="26" cy="26" r="23"></circle>
+    <circle class="fg" id="ring" cx="26" cy="26" r="23"
+            stroke-dasharray="144.5" stroke-dashoffset="144.5"></circle>
+  </svg>
+  <p class="who">正在前往 <b>南京传媒学院</b></p>
+  <button class="go" id="go" type="button">立即前往</button>
+  <p class="hint" id="tip">轻点画面直接前往 · 长按暂停</p>
+</div>
+<div id="sub"><b>南京传媒学院</b><span>新生报到</span></div>
+<div class="hold" id="hold"><span>已暂停</span></div>
+<div id="load"><div><div class="sp"></div><p>正在搭建校门场景</p></div></div>
+<dialog id="about">
+  <h2>关于本页</h2>
+  <p>场景<b>没有任何外部模型与贴图文件</b>：校门、树、人群、奶娃全部由基础几何体程序化生成；
+     石面、瓦垄、草地、布纹的法线与粗糙度贴图是运行时用 Canvas 现算的；
+     天空是一张程序化等距柱状图，经 PMREM 卷积成环境光。默认走硬件多重采样直出；
+     加 <code>?post</code> 可另开泛光 + 调色 + FXAA 后期链。</p>
+  <p>本站与南京传媒学院无任何官方关联，「中国奶娃大学」是虚构校名，仅作趣味用途。本页看完即跳转至 www.cucn.edu.cn。</p>
+  <button id="close" type="button">知道了</button>
+</dialog>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/post.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script>
+addEventListener("error",function(e){
+  var d=document.createElement("div");
+  d.style.cssText="position:fixed;left:0;top:0;right:0;z-index:99;background:#7A1414;color:#fff;"+
+    "font:12px/1.6 ui-monospace,monospace;padding:8px 12px;white-space:pre-wrap";
+  d.textContent="JS ERROR: "+e.message+" @"+String(e.filename||"").split("/").pop()+":"+e.lineno;
+  document.body.appendChild(d);
+});
+(function(){
+"use strict";
+var canvas=document.getElementById("gl"), load=document.getElementById("load");
+var Q=location.search;
+var JUMP=/[?&]jump/.test(Q);
+/* 后期链（泛光+调色+FXAA）目前只在 ?post 下开启：它在无头 SwiftShader 下每帧要
+   几分钟，我没能把它验收通过，所以默认走硬件 MSAA 直出。
+   注意：下面这次 getContext 决定了最终上下文的属性，antialias 必须在这里给，
+   WebGLRenderer 上的同名选项对一个已存在的 context 是无效的。 */
+var WANT_POST=/[?&]post/.test(Q);
+var probe=null;
+try{
+  probe=canvas.getContext("webgl2",{antialias:!WANT_POST})
+      ||canvas.getContext("webgl",{antialias:!WANT_POST});
+}catch(e){}
+if(!window.THREE||!probe){
+  /* 兜底：3D 起不来就退回 2D 跳转动画（index.html 自己会在 5.9 秒后跳南传） */
+  load.innerHTML='<div><p style="letter-spacing:.05em">这台设备跑不动 3D，'+
+    '正在退回 2D 版…</p></div>';
+  setTimeout(function(){location.replace("index.html");},1200);
+  return;
+}
+var T=window.THREE;
+var reduce=/[?&]motion=reduce/.test(Q)||
+  (/[?&]motion=full/.test(Q)?false:matchMedia("(prefers-reduced-motion: reduce)").matches);
+var isMobile=/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
+var hiEnd=!/[?&]low/.test(Q)&&!isMobile||/[?&]hi/.test(Q);
+
+/* ══ 1. 程序化贴图工坊：画高度图 → 算法线/粗糙度 ═════════ */
+function cvs(w,h){var c=document.createElement("canvas");c.width=w;c.height=h;return c;}
+function noise(g,w,h,amt,lo,hi){
+  var d=g.getImageData(0,0,w,h),p=d.data;
+  for(var i=0;i<p.length;i+=4){
+    var v=lo+Math.random()*(hi-lo), base=(p[i]+p[i+1]+p[i+2])/3;
+    var mix=base*amt+v*(1-amt);
+    p[i]=p[i+1]=p[i+2]=mix;
+  }
+  g.putImageData(d,0,0);
+}
+/* 高度图 → 切线空间法线贴图（中心差分） */
+function toNormal(src,strength){
+  var w=src.width,h=src.height,g=src.getContext("2d");
+  var s=g.getImageData(0,0,w,h).data;
+  var out=cvs(w,h),og=out.getContext("2d"),oi=og.createImageData(w,h),o=oi.data;
+  function H(x,y){x=(x+w)%w;y=(y+h)%h;return s[(y*w+x)*4]/255;}
+  for(var y=0;y<h;y++)for(var x=0;x<w;x++){
+    var dx=(H(x+1,y)-H(x-1,y))*strength, dy=(H(x,y+1)-H(x,y-1))*strength;
+    var len=Math.sqrt(dx*dx+dy*dy+1), i=(y*w+x)*4;
+    o[i]=(-dx/len*.5+.5)*255;o[i+1]=(-dy/len*.5+.5)*255;
+    o[i+2]=(1/len*.5+.5)*255;o[i+3]=255;
+  }
+  og.putImageData(oi,0,0);return out;
+}
+function tex(c,rep,linear){
+  var t=new T.CanvasTexture(c);
+  if(!linear)t.encoding=T.sRGBEncoding;
+  t.anisotropy=8;
+  if(rep){t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rep[0],rep[1]);}
+  return t;
+}
+function stoneMaps(){
+  var S=512,h=cvs(S,S),g=h.getContext("2d");
+  g.fillStyle="#808080";g.fillRect(0,0,S,S);
+  for(var i=0;i<260;i++){
+    var x=Math.random()*S,y=Math.random()*S,a=Math.random()*Math.PI,l=8+Math.random()*30;
+    g.strokeStyle="rgba(255,255,255,"+(.05+Math.random()*.14)+")";
+    g.lineWidth=1+Math.random()*3;g.beginPath();
+    g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();
+    g.strokeStyle="rgba(0,0,0,"+(.05+Math.random()*.12)+")";g.beginPath();
+    g.moveTo(x+2,y+2);g.lineTo(x+2+Math.cos(a)*l,y+2+Math.sin(a)*l);g.stroke();
+  }
+  noise(g,S,S,.72,60,190);
+  var r=cvs(S,S),rg=r.getContext("2d");
+  rg.fillStyle="#b8b8b8";rg.fillRect(0,0,S,S);noise(rg,S,S,.55,150,215);
+  return {normal:tex(toNormal(h,2.4),null,true),rough:tex(r,null,true)};
+}
+function fineStone(){
+  var S=256,h=cvs(S,S),g=h.getContext("2d");
+  g.fillStyle="#808080";g.fillRect(0,0,S,S);
+  for(var i=0;i<1100;i++){
+    var x=Math.random()*S,y=Math.random()*S,a=Math.random()*6.283,l=3+Math.random()*12;
+    g.strokeStyle="rgba(255,255,255,"+(.10+Math.random()*.24)+")";
+    g.lineWidth=.7+Math.random()*1.7;
+    g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();
+    g.strokeStyle="rgba(0,0,0,"+(.10+Math.random()*.22)+")";
+    g.beginPath();g.moveTo(x+1,y+1);g.lineTo(x+1+Math.cos(a)*l,y+1+Math.sin(a)*l);g.stroke();
+  }
+  noise(g,S,S,.62,88,172);
+  return tex(toNormal(h,2.0),[7,7],true);
+}
+function tileMaps(){
+  var W=512,H=256,h=cvs(W,H),g=h.getContext("2d");
+  for(var x=0;x<W;x++){
+    var v=Math.abs(Math.sin(x/W*Math.PI*16)),c=(60+v*130)|0;
+    g.fillStyle="rgb("+c+","+c+","+(70+v*120|0)+")";g.fillRect(x,0,1,H);
+  }
+  for(var y=0;y<H;y+=32){g.fillStyle="rgba(0,0,0,.35)";g.fillRect(0,y,W,2);}
+  noise(g,W,H,.8,40,200);
+  var r=cvs(W,H),rg=r.getContext("2d");
+  rg.fillStyle="#6a6a6a";rg.fillRect(0,0,W,H);noise(rg,W,H,.6,80,190);
+  return {normal:tex(toNormal(h,3.6),null,true),rough:tex(r,null,true)};
+}
+function paveMaps(){
+  var S=512,h=cvs(S,S),g=h.getContext("2d");
+  g.fillStyle="#9a9a9a";g.fillRect(0,0,S,S);
+  g.strokeStyle="rgba(0,0,0,.55)";g.lineWidth=3;
+  for(var y=0;y<=S;y+=64){g.beginPath();g.moveTo(0,y);g.lineTo(S,y);g.stroke();}
+  for(var x=0;x<=S;x+=128)for(var r2=0;r2<8;r2++){
+    var yy=r2*64+((x/128)%2?32:0);
+    g.beginPath();g.moveTo(x,yy);g.lineTo(x,yy+64);g.stroke();
+  }
+  noise(g,S,S,.62,90,190);
+  var col=cvs(S,S),cg=col.getContext("2d");
+  cg.fillStyle="#6F6D66";cg.fillRect(0,0,S,S);noise(cg,S,S,.5,96,150);
+  cg.strokeStyle="rgba(0,0,0,.30)";cg.lineWidth=2;
+  for(var yy=0;yy<S;yy+=64){cg.beginPath();cg.moveTo(0,yy);cg.lineTo(S,yy);cg.stroke();}
+  for(var xx=0;xx<S;xx+=128)for(var r3=0;r3<8;r3++){
+    cg.beginPath();cg.moveTo(xx,r3*64+((xx/128)%2?32:0));cg.lineTo(xx,r3*64+64);cg.stroke();}
+  var r=cvs(S,S),rg=r.getContext("2d");
+  rg.fillStyle="#7a7a7a";rg.fillRect(0,0,S,S);noise(rg,S,S,.5,105,205);
+  return {map:tex(col,[2,2]),normal:tex(toNormal(h,3.4),[2,2],true),rough:tex(r,[2,2],true)};
+}
+function grassMaps(){
+  var S=512,h=cvs(S,S),g=h.getContext("2d");
+  g.fillStyle="#707070";g.fillRect(0,0,S,S);
+  for(var i=0;i<9000;i++){
+    g.strokeStyle="rgba(255,255,255,"+(.1+Math.random()*.35)+")";g.lineWidth=1.2;
+    var x=Math.random()*S,y=Math.random()*S;
+    g.beginPath();g.moveTo(x,y);g.lineTo(x+(Math.random()-.5)*4,y-3-Math.random()*5);g.stroke();
+  }
+  var col=cvs(S,S),cg=col.getContext("2d");
+  cg.fillStyle="#3F5730";cg.fillRect(0,0,S,S);
+  for(var j=0;j<16000;j++){
+    cg.fillStyle=Math.random()<.5?"rgba(30,48,24,.62)":"rgba(94,116,58,.42)";
+    cg.fillRect(Math.random()*S,Math.random()*S,2,3);
+  }
+  return {map:tex(col,[46,46]),normal:tex(toNormal(h,1.9),[46,46],true)};
+}
+function clothRough(){
+  var S=256,c=cvs(S,S),g=c.getContext("2d");
+  g.fillStyle="#a0a0a0";g.fillRect(0,0,S,S);
+  for(var i=0;i<S;i+=3){
+    g.fillStyle="rgba(255,255,255,.16)";g.fillRect(i,0,1,S);
+    g.fillStyle="rgba(0,0,0,.14)";g.fillRect(0,i,S,1);
+  }
+  noise(g,S,S,.8,110,190);
+  return tex(c,null,true);
+}
+/* 接触阴影贴片：物体「浮着」的头号元凶就是没有它 */
+var _aoCache=null;
+function aoTex(){
+  if(_aoCache)return _aoCache;
+  var S=128,c=cvs(S,S),g=c.getContext("2d");     /* 必须从透明底开始：alpha 才是衰减 */
+  var rg=g.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2);
+  rg.addColorStop(0,"rgba(255,255,255,1)");rg.addColorStop(.26,"rgba(255,255,255,.86)");
+  rg.addColorStop(.48,"rgba(255,255,255,.44)");rg.addColorStop(.70,"rgba(255,255,255,.12)");
+  rg.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=rg;g.fillRect(0,0,S,S);
+  _aoCache=tex(c,null,true);
+  _aoCache.wrapS=_aoCache.wrapT=T.ClampToEdgeWrapping;
+  return _aoCache;
+}
+var AO_GEO=new T.PlaneGeometry(1,1);
+function ao(size,opacity,x,y,z,ry){
+  var m=new T.Mesh(AO_GEO,new T.MeshBasicMaterial({
+    map:aoTex(),color:0x000000,transparent:true,opacity:opacity===undefined?.34:opacity,
+    depthWrite:false,toneMapped:false}));
+  if(y===undefined)y=.05;
+  m.rotation.x=-Math.PI/2; if(ry)m.rotation.z=ry;
+  m.scale.set(size,size,1);m.position.set(x||0,y,z||0);m.renderOrder=1;
+  m.raycast=function(){};return m;
+}
+function bellyTex(){
+  var S=256,c=cvs(S,S),g=c.getContext("2d");
+  var rg=g.createRadialGradient(S/2,S*.52,0,S/2,S*.52,S*.50);
+  rg.addColorStop(0,"rgba(226,214,180,1)");rg.addColorStop(.52,"rgba(226,214,180,1)");
+  rg.addColorStop(.78,"rgba(226,214,180,.58)");rg.addColorStop(.93,"rgba(226,214,180,.18)");
+  rg.addColorStop(1,"rgba(226,214,180,0)");
+  g.save();g.translate(S/2,S*.52);g.scale(.80,1.06);g.translate(-S/2,-S*.52);
+  g.fillStyle=rg;g.fillRect(0,0,S,S);g.restore();
+  return tex(c);
+}
+function plaqueTex(text,bg,fg,w,h,size){
+  var c=cvs(w,h),g=c.getContext("2d");
+  g.fillStyle=bg;g.fillRect(0,0,w,h);
+  g.strokeStyle="rgba(255,255,255,.30)";g.lineWidth=Math.max(3,h*.05);
+  g.strokeRect(g.lineWidth/2,g.lineWidth/2,w-g.lineWidth,h-g.lineWidth);
+  if(!text)return tex(c);
+  g.fillStyle=fg;g.textAlign="center";g.textBaseline="middle";
+  g.font="700 "+size+'px "Songti SC","STSong","PingFang SC",serif';
+  g.shadowColor="rgba(0,0,0,.45)";g.shadowBlur=size*.08;g.shadowOffsetY=size*.04;
+  var sp=size*.17,tot=text.length*(size+sp),x=(w-tot)/2+size/2;
+  for(var i=0;i<text.length;i++){g.fillText(text.charAt(i),x,h/2);x+=size+sp;}
+  return tex(c);
+}
+function facadeMaps(){
+  var W=512,H=512,c=cvs(W,H),g=c.getContext("2d"),e=cvs(W,H),eg=e.getContext("2d");
+  g.fillStyle="#8B95A1";g.fillRect(0,0,W,H);
+  eg.fillStyle="#000";eg.fillRect(0,0,W,H);
+  for(var y=20;y<H-20;y+=46)for(var x=20;x<W-20;x+=42){
+    var lit=Math.random()<.18;
+    g.fillStyle=lit?"#C6BCA4":"#546678";g.fillRect(x,y,28,30);
+    g.fillStyle="rgba(255,255,255,.22)";g.fillRect(x,y,28,3);
+    g.fillStyle="rgba(0,0,0,.20)";g.fillRect(x,y+27,28,3);
+    if(lit){eg.fillStyle="#FFE0A8";eg.fillRect(x,y,28,30);}
+  }
+  g.strokeStyle="rgba(0,0,0,.20)";g.lineWidth=2;
+  for(var yy=0;yy<H;yy+=46){g.beginPath();g.moveTo(0,yy);g.lineTo(W,yy);g.stroke();}
+  return {map:tex(c,[2,3]),emi:tex(e,[2,3])};
+}
+function leafTex(){
+  var c=cvs(64,64),g=c.getContext("2d");
+  g.fillStyle="#D8A03A";g.beginPath();g.ellipse(32,32,21,11,-.5,0,7);g.fill();
+  g.fillStyle="rgba(150,100,20,.5)";g.beginPath();g.ellipse(32,32,14,6,-.5,0,7);g.fill();
+  g.strokeStyle="rgba(110,72,16,.75)";g.lineWidth=2;
+  g.beginPath();g.moveTo(12,42);g.lineTo(52,22);g.stroke();
+  var t=tex(c);t.transparent=true;return t;
+}
+function wideBannerTex(text,bg){
+  var W=1024,H=128,c=cvs(W,H),g=c.getContext("2d");
+  g.fillStyle=bg;g.fillRect(0,0,W,H);
+  var lg=g.createLinearGradient(0,0,0,H);           /* 布面上下受光差 */
+  lg.addColorStop(0,"rgba(255,255,255,.16)");lg.addColorStop(.5,"rgba(0,0,0,0)");
+  lg.addColorStop(1,"rgba(0,0,0,.22)");g.fillStyle=lg;g.fillRect(0,0,W,H);
+  g.strokeStyle="rgba(255,240,210,.75)";g.lineWidth=7;g.strokeRect(9,9,W-18,H-18);
+  g.fillStyle="#FFF";g.textAlign="center";g.textBaseline="middle";
+  g.font='700 74px "PingFang SC","Songti SC",sans-serif';
+  g.shadowColor="rgba(0,0,0,.35)";g.shadowBlur=6;g.shadowOffsetY=3;
+  var sp=6,tot=0,i;
+  for(i=0;i<text.length;i++)tot+=g.measureText(text.charAt(i)).width+sp;
+  var x=(W-tot)/2+g.measureText(text.charAt(0)).width/2;
+  g.textAlign="left";
+  for(i=0;i<text.length;i++){var ch=text.charAt(i);
+    g.fillText(ch,x,H/2);x+=g.measureText(ch).width+sp;}
+  return tex(c);
+}
+function bannerTex(title,lines,bg){
+  var c=cvs(512,1024),g=c.getContext("2d");
+  g.fillStyle=bg;g.fillRect(0,0,512,1024);
+  g.fillStyle="rgba(255,255,255,.1)";g.fillRect(0,0,512,150);
+  g.fillStyle="#FFF";g.textAlign="center";
+  g.font='700 70px "PingFang SC",sans-serif';g.fillText(title,256,100);
+  g.font='36px "PingFang SC",sans-serif';g.fillStyle="rgba(255,255,255,.92)";
+  lines.forEach(function(s,i){g.fillText(s,256,236+i*62);});
+  g.strokeStyle="rgba(255,255,255,.45)";g.lineWidth=8;g.strokeRect(4,4,504,1016);
+  return tex(c);
+}
+
+/* ══ 2. 渲染器 + IBL 环境光照 ═══════════════════════════ */
+var DPR=Math.min(devicePixelRatio||1,hiEnd?2:1.25);
+var renderer=new T.WebGLRenderer({canvas:canvas,antialias:!WANT_POST,
+  powerPreference:"high-performance"});
+renderer.setPixelRatio(DPR);
+renderer.setSize(innerWidth,innerHeight,false);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=T.PCFSoftShadowMap;
+renderer.outputEncoding=T.sRGBEncoding;
+renderer.toneMapping=T.ACESFilmicToneMapping;
+renderer.toneMappingExposure=.74;
+if(/[?&]ns/.test(Q))renderer.shadowMap.enabled=false;   /* 验收用：?ns 关阴影，定位帧耗时来源 */
+
+var scene=new T.Scene();
+var camera=new T.PerspectiveCamera(36,innerWidth/innerHeight,.4,600);
+
+/* 程序化等距柱状天空：天顶→地平线→地面反弹，日轮与平行光严格同向 */
+var SUN_POS=new T.Vector3(27,15.5,-9.5);          /* ← 低角度斜射，长影是质感的一半 */
+function skyCanvas(){
+  var W=1024,H=512,c=cvs(W,H),g=c.getContext("2d");
+  var d=SUN_POS.clone().normalize();
+  var u=Math.atan2(d.z,d.x)/(Math.PI*2)+.5;
+  var v=Math.asin(T.MathUtils.clamp(d.y,-1,1))/Math.PI+.5;
+  var sx=u*W, sy=(1-v)*H;
+  var lin=g.createLinearGradient(0,0,0,H);
+  lin.addColorStop(0,"#2A5A9E");lin.addColorStop(.30,"#6E97C4");
+  lin.addColorStop(.44,"#B6D2E4");lin.addColorStop(.50,"#E8D9BC");
+  lin.addColorStop(.545,"#C9B795");lin.addColorStop(.62,"#7C8A66");
+  lin.addColorStop(1,"#3E4630");
+  g.fillStyle=lin;g.fillRect(0,0,W,H);
+  /* 云带：越靠近地平线越扁越长，给天空一点纵深而不是纯色渐变 */
+  for(var i=0;i<120;i++){
+    var t=Math.random(),y=H*(.10+t*.36),x=Math.random()*W,w=26+Math.random()*(70+t*220);
+    var rg=g.createRadialGradient(x,y,0,x,y,w);
+    rg.addColorStop(0,"rgba(255,255,255,"+(.10+Math.random()*.24)+")");
+    rg.addColorStop(.55,"rgba(250,248,244,"+(.05+Math.random()*.12)+")");
+    rg.addColorStop(1,"rgba(255,255,255,0)");
+    g.save();g.translate(x,y);g.scale(1,.16+Math.random()*.13);
+    g.fillStyle=rg;g.beginPath();g.arc(0,0,w,0,7);g.fill();g.restore();
+  }
+  /* 日轮 + 大范围暖晕 */
+  var halo=g.createRadialGradient(sx,sy,0,sx,sy,H*.55);
+  halo.addColorStop(0,"rgba(255,252,240,1)");halo.addColorStop(.030,"rgba(255,240,198,.98)");
+  halo.addColorStop(.11,"rgba(255,214,150,.46)");halo.addColorStop(.30,"rgba(255,200,146,.17)");
+  halo.addColorStop(1,"rgba(255,206,150,0)");
+  g.fillStyle=halo;g.fillRect(0,0,W,H);
+  var band=g.createLinearGradient(0,H*.40,0,H*.53);
+  band.addColorStop(0,"rgba(255,214,160,0)");band.addColorStop(.6,"rgba(255,216,166,.22)");
+  band.addColorStop(1,"rgba(255,216,166,0)");
+  g.fillStyle=band;g.fillRect(0,H*.40,W,H*.14);
+  return c;
+}
+var skyTex0=new T.CanvasTexture(skyCanvas());
+skyTex0.mapping=T.EquirectangularReflectionMapping;
+skyTex0.encoding=T.sRGBEncoding;
+var pmrem=new T.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+scene.environment=pmrem.fromEquirectangular(skyTex0).texture;   /* ← 塑料感消失的那一行 */
+scene.background=skyTex0;
+scene.fog=new T.Fog(0xCBD3D2,40,186);
+
+/* ══ 3. 材质库：全部带法线 + 粗糙度 + 环境反射 ═══════════ */
+var sm=stoneMaps(),tm=tileMaps(),pm2=paveMaps(),gm=grassMaps(),fm=facadeMaps(),cr=clothRough();
+var fstone=fineStone();
+function std(o){return new T.MeshStandardMaterial(o);}
+var M={
+  stone : std({normalMap:sm.normal,roughnessMap:sm.rough,color:0xAA9E88,
+               roughness:1,metalness:0,envMapIntensity:.40}),
+  stoneD: std({normalMap:sm.normal,color:0x9A8F7B,roughness:.94,metalness:0,envMapIntensity:.40}),
+  stoneB: std({normalMap:sm.normal,color:0x6F6960,roughness:.96,metalness:0,envMapIntensity:.34}),
+  roof  : std({normalMap:tm.normal,roughnessMap:tm.rough,color:0x2A4468,
+               roughness:1,metalness:.05,envMapIntensity:1.0}),
+  gold  : std({color:0xB8932A,roughness:.26,metalness:.92,envMapIntensity:1.25}),
+  trunk : std({normalMap:sm.normal,color:0x4A3828,roughness:.98,metalness:0,envMapIntensity:.45}),
+  leafA : std({normalMap:sm.normal,color:0x243A20,roughness:.95,metalness:0,envMapIntensity:.38}),
+  leafB : std({normalMap:sm.normal,color:0x31491F,roughness:.95,metalness:0,envMapIntensity:.38}),
+  leafC : std({normalMap:sm.normal,color:0x415A28,roughness:.95,metalness:0,envMapIntensity:.38}),
+  grass : std({map:gm.map,normalMap:gm.normal,vertexColors:true,roughness:.98,metalness:0,
+               envMapIntensity:.45}),
+  pave  : std({map:pm2.map,normalMap:pm2.normal,roughnessMap:pm2.rough,
+               roughness:1,metalness:.02,envMapIntensity:.45,color:0xA8A49C}),
+  wall  : std({map:fm.map,emissiveMap:fm.emi,emissive:0xFFD9A0,emissiveIntensity:.42,
+               color:0xD3DAE2,roughness:.88,metalness:.04,envMapIntensity:.95}),
+  wallP : std({color:0x9AA4AF,roughness:.9,envMapIntensity:.8}),
+  wallT : std({color:0x75808C,roughness:.92,envMapIntensity:.7}),
+  tentR : std({normalMap:sm.normal,roughnessMap:cr,color:0x8E2018,roughness:1,envMapIntensity:.42}),
+  tentB : std({normalMap:sm.normal,roughnessMap:cr,color:0x17427E,roughness:1,envMapIntensity:.42}),
+  cloth : std({color:0xF2EDE1,roughness:.92,side:T.DoubleSide,envMapIntensity:.6}),
+  pole  : std({color:0x4E5359,roughness:.52,metalness:.45,envMapIntensity:.65}),
+  table : std({normalMap:sm.normal,color:0x8A6A46,roughness:.88,envMapIntensity:.6}),
+  bulb  : std({color:0x221C10,emissive:0xFFD9A0,emissiveIntensity:5,roughness:.4}),
+  hero  : std({color:0xB48420,roughness:.54,metalness:0,envMapIntensity:.34}),
+  belly : std({color:0xA89468,roughness:.58,envMapIntensity:.34}),
+  dark  : std({color:0x453D2C,roughness:.62,metalness:0,envMapIntensity:.42}),
+  eyeW  : std({color:0x7FA86A,roughness:.28,metalness:0,envMapIntensity:.75}),
+  eyeB  : std({color:0x0D100D,roughness:.16,metalness:0,envMapIntensity:.9}),
+  gloss : std({color:0xFFFFFF,roughness:.10,metalness:0,envMapIntensity:1.4}),
+  mouth : std({color:0x4C4331,roughness:.66})
+};
+
+
+/* 石面风化：按世界高度把下部压暗，这是「渲染」和「建模」最直观的分界 */
+function grime(mat,baseY,span,strength){
+  var lo=(1-strength).toFixed(3),lo2=(1-strength*.45).toFixed(3),
+      by=baseY.toFixed(2),sp=span.toFixed(2),k="grime"+by+sp+lo;
+  var inj="#include <map_fragment>\n"+
+    "  float gy=clamp((vWP.y-"+by+")/"+sp+",0.0,1.0);\n"+
+    "  gy=pow(gy,0.62);\n"+
+    "  float gx=clamp(abs(vWP.x)/18.0,0.0,1.0);\n"+
+    "  diffuseColor.rgb*=mix("+lo+",1.0,gy);\n"+
+    "  diffuseColor.rgb*=mix(1.0,"+lo2+",gx);";
+  mat.onBeforeCompile=function(sh){
+    sh.vertexShader="varying vec3 vWP;\n"+sh.vertexShader.replace(
+      "#include <begin_vertex>",
+      "#include <begin_vertex>\n  vWP=(modelMatrix*vec4(transformed,1.0)).xyz;");
+    sh.fragmentShader="varying vec3 vWP;\n"+sh.fragmentShader.replace(
+      "#include <map_fragment>",inj);
+  };
+  mat.customProgramCacheKey=function(){return k;};
+  return mat;
+}
+
+grime(M.stone ,.30,7.5,.42);
+grime(M.stoneD,.10,6.0,.46);
+grime(M.stoneB,.00,3.2,.30);
+grime(M.hero ,.35,1.9,.20);
+/* ══ 4. 倒角几何：轮廓质感全靠边缘高光 ══════════════════ */
+function roundRect(w,h,r){
+  var s=new T.Shape(),x=-w/2,y=-h/2;r=Math.min(r,w/2,h/2);
+  s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.quadraticCurveTo(x+w,y,x+w,y+r);
+  s.lineTo(x+w,y+h-r);s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  s.lineTo(x+r,y+h);s.quadraticCurveTo(x,y+h,x,y+h-r);
+  s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y);
+  return s;
+}
+function bevelBox(w,h,d,r,seg){
+  r=Math.min(r,Math.min(w,h,d)/2.3);
+  var g=new T.ExtrudeGeometry(roundRect(w,h,r),
+    {depth:Math.max(.01,d-r*2),bevelEnabled:true,bevelThickness:r,bevelSize:r,
+     bevelSegments:seg||2,curveSegments:seg||3,steps:1});
+  g.translate(0,0,-d/2+r);g.computeVertexNormals();
+  return g;
+}
+function mesh(geo,mat,x,y,z){
+  var m=new T.Mesh(geo,mat);m.position.set(x||0,y||0,z||0);
+  m.castShadow=true;m.receiveShadow=true;return m;
+}
+function box(w,h,d,mat,x,y,z){
+  return mesh(bevelBox(w,h,d,Math.min(w,h,d)*.085),mat,x,y,z);
+}
+
+/* ══ 5. 地面 / 步道 / 路缘 ═════════════════════════════ */
+/* 无值哈希噪声：给草地铺一层大尺度色相与干湿变化，破掉「一张贴图刷到底」 */
+function h2(x,y){var n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);}
+function vn(x,y){
+  var xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi;
+  fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+  return h2(xi,yi)*(1-fx)*(1-fy)+h2(xi+1,yi)*fx*(1-fy)
+        +h2(xi,yi+1)*(1-fx)*fy+h2(xi+1,yi+1)*fx*fy;
+}
+function paveMat(w,h,tile){
+  var s=tile||3.0,m=M.pave.clone();
+  ["map","normalMap","roughnessMap"].forEach(function(k){
+    if(!M.pave[k])return;var t=M.pave[k].clone();
+    t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(w/s,h/s);t.needsUpdate=true;
+    m[k]=t;});
+  return m;
+}
+var GSEG=132,groundGeo=new T.PlaneGeometry(340,340,GSEG,GSEG);
+(function(){
+  var p=groundGeo.attributes.position,col=new Float32Array(p.count*3),c=new T.Color();
+  for(var i=0;i<p.count;i++){
+    var x=p.getX(i),y=-p.getY(i),h=Math.abs(x);   /* 平面绕 X 反转后 y→世界 z */
+    var n=vn(x*.055,y*.055)*.6+vn(x*.19,y*.19)*.4;
+    var dry=vn(x*.021+31,y*.021-7);
+    var wear=0;
+    if(y>-30&&y<48&&h<3.6)wear=Math.max(wear,1-Math.abs(h-3.6)/2.0);      /* 主步道 */
+    if(y>-28&&y<-11&&Math.abs(x)<13)wear=Math.max(wear,1-Math.abs(Math.abs(x)-12.4)/2.2);/* 广场边 */
+    wear=Math.max(0,Math.min(1,wear))*Math.min(1,.55+n);
+    var t=(n-.5)*.9+dry*.16;
+    c.setRGB(
+      Math.max(.22,Math.min(1.6,.94+t*.98-wear*.34)),
+      Math.max(.22,Math.min(1.6,1.0+t*.66-wear*.14)),
+      Math.max(.18,Math.min(1.5,.86+t*.26+wear*.42)));
+    col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b;
+  }
+  groundGeo.setAttribute("color",new T.BufferAttribute(col,3));
+})();
+var ground=mesh(groundGeo,M.grass,0,0,0);
+ground.rotation.x=-Math.PI/2;ground.castShadow=false;scene.add(ground);
+var walk=mesh(new T.PlaneGeometry(5.6,80),paveMat(5.6,80,2.9),0,.02,8);
+walk.rotation.x=-Math.PI/2;walk.castShadow=false;scene.add(walk);
+var plaza=mesh(new T.PlaneGeometry(25,16),paveMat(25,16,3.1),0,.021,-20.5);
+plaza.rotation.x=-Math.PI/2;plaza.castShadow=false;scene.add(plaza);
+/* 广场收边石：把「贴图带子」变成有厚度的铺装 */
+[-1,1].forEach(function(s){
+  for(var z=-26;z<40;z+=4){
+    var c=box(.44,.22,3.94,M.stoneD,s*3.06,.11,z);c.castShadow=false;scene.add(c);
+  }
+});
+[[0,-28.4,25.6],[0,-12.2,25.6]].forEach(function(o){
+  scene.add(box(o[2],.24,.42,M.stoneD,o[0],.12,o[1]));
+});
+
+/* ══ 6. 牌坊校门：台基·柱础·额枋·斗拱·瓦垄·脊兽 ═════════ */
+var gate=new T.Group();gate.position.set(0,0,-14);scene.add(gate);
+gate.add(box(19.4,.34,2.6,M.stoneB,0,.17,0));
+gate.add(box(18.6,.3,2.2,M.stoneD,0,.49,0));
+gate.add(box(17.8,.26,1.9,M.stone,0,.77,0));
+
+
+function pillar(x,top){
+  var g=new T.Group();
+  g.add(box(1.0,.34,1.0,M.stoneD,0,.26,0));
+  g.add(box(1.26,.26,1.26,M.stone,0,.56,0));
+  var cap=mesh(new T.SphereGeometry(.63,20,14),M.stone,0,.86,0);
+  cap.scale.set(1,.42,1);cap.castShadow=cap.receiveShadow=true;g.add(cap);
+  g.add(mesh(bevelBox(1.44,top-1.05,1.44,.1,2),M.stone,0,(top+1.05)/2,0));
+  /* 柱身弦月线脚：一道凸棱就把「白方块」变成石柱 */
+  g.add(box(1.60,.17,1.60,M.stoneD,0,top*.52,0));
+  g.add(box(1.52,.11,1.52,M.stoneD,0,top*.56,0));
+  g.add(box(1.8,.24,1.8,M.stoneD,0,top+.14,0));
+  g.add(mesh(new T.CylinderGeometry(.34,.42,.5,18),M.gold,0,top+.48,0));
+  /* 抱鼓石：鼓面朝向来路 */
+  [-1,1].forEach(function(s){
+    var d=new T.Group();
+    d.add(box(1.34,.24,.40,M.stone,0,.14,0));
+    d.add(box(1.12,.62,.26,M.stoneD,0,.56,0));
+    var drum=mesh(new T.CylinderGeometry(.52,.52,.20,24),M.stoneD,0,.62,0);
+    drum.rotation.x=Math.PI/2;d.add(drum);
+    var boss=mesh(new T.SphereGeometry(.15,12,10),M.stone,0,.62,s*.13);
+    boss.scale.z=.5;d.add(boss);
+    d.position.set(0,0,s*1.06);g.add(d);
+  });
+  g.add(ao(1.9,.46,0,.92,0));
+  g.position.x=x;return g;
+}
+gate.add(pillar(-3.2,8.8));gate.add(pillar(3.2,8.8));
+gate.add(pillar(-6.5,7.3));gate.add(pillar(6.5,7.3));
+
+function inkMat(t,inten){
+  return std({map:t,roughness:.66,metalness:.06,side:T.DoubleSide,envMapIntensity:inten||.7});
+}
+function beam(w,h,y,x){
+  var g=new T.Group();
+  g.add(box(w,h,.98,M.stone,x,y,0));
+  var paint=new T.Mesh(new T.PlaneGeometry(w*.94,h*.46),
+    inkMat(plaqueTex("","#1E4570","#C9A227",1024,96,0)));
+  paint.position.set(x,y+h*.2,.51);g.add(paint);
+  g.add(box(w+.5,.2,1.34,M.roof,x,y+h/2+.1,0));
+  /* 雀替：柱梁交角的三角撑，牌坊的「结构感」全靠它 */
+  [-1,1].forEach(function(s){
+    var s2=new T.Shape();
+    s2.moveTo(0,0);s2.lineTo(0,-h*1.5);
+    s2.quadraticCurveTo(-s*w*.11,-h*1.4,-s*.86,0);s2.lineTo(0,0);
+    var q=new T.Mesh(new T.ExtrudeGeometry(s2,{depth:.16,bevelEnabled:true,
+      bevelThickness:.04,bevelSize:.04,bevelSegments:2,curveSegments:8}),M.stoneD);
+    q.position.set(x+s*(w/2-.06),y-h/2,.56);q.castShadow=q.receiveShadow=true;g.add(q);
+    var q2=q.clone();q2.position.z=-.74;g.add(q2);
+  });
+  return g;
+}
+gate.add(beam(7.6,1.02,7.95,0));
+gate.add(beam(3.5,.74,6.55,-5.0));
+gate.add(beam(3.5,.74,6.55,5.0));
+
+function dougong(x,y){
+  var g=new T.Group();
+  for(var i=0;i<3;i++){
+    var s=.30+i*.17;
+    g.add(box(s*2.4,s,s*1.5,M.stoneD,x,y+i*.3,0));
+  }
+  return g;
+}
+[-3.2,3.2].forEach(function(x){gate.add(dougong(x,9.05));});
+[-6.5,-4.0,4.0,6.5].forEach(function(x){gate.add(dougong(x,6.75));});
+
+var roofB=std({normalMap:tm.normal,roughnessMap:tm.rough,color:0x35527A,
+               roughness:1,metalness:.05,envMapIntensity:1.0});
+function roof(w,d,y){
+  var g=new T.Group(),n=Math.round(w/.36);
+  for(var i=0;i<n;i++){
+    var t=mesh(new T.CylinderGeometry(.15,.15,d,10,1,false),i%2?M.roof:roofB,
+      -w/2+.18+i*(w/n),y+.16,0);
+    t.rotation.x=Math.PI/2;g.add(t);
+    /* 瓦当：檐口一排圆头，剪影立刻从「管子」变成「屋檐」 */
+    var e=mesh(new T.CylinderGeometry(.155,.155,.07,12),M.roof,
+      -w/2+.18+i*(w/n),y+.16,d/2+.02);
+    e.rotation.x=Math.PI/2;g.add(e);
+  }
+  g.add(box(w+.7,.34,.52,M.stoneD,0,y+.36,0));
+  g.add(box(w+.7,.2,.92,M.stoneD,0,y+.16,d/2-.22));
+  /* 正脊两端鸱吻 */
+  [-1,1].forEach(function(s){
+    g.add(box(.42,.62,.42,M.stoneD,s*(w/2+.14),y+.62,0));
+    g.add(mesh(new T.SphereGeometry(.14,10,8),M.gold,s*(w/2+.22),y+.56,0));
+    g.add(mesh(new T.ConeGeometry(.15,.44,10),M.gold,s*(w/2+.22),y+.84,0));
+  });
+  /* 脊中央宝顶 */
+  g.add(mesh(new T.CylinderGeometry(.10,.16,.30,12),M.stoneD,0,y+.66,0));
+  g.add(mesh(new T.SphereGeometry(.17,12,10),M.gold,0,y+.92,0));
+  return g;
+}
+gate.add(roof(7.9,1.55,9.55));
+var r2=roof(3.9,1.25,7.35);r2.position.x=-5.0;gate.add(r2);
+var r3=roof(3.9,1.25,7.35);r3.position.x=5.0;gate.add(r3);
+var N_STRUCT=gate.children.length;   /* ↑ 以上的都是结构件，?blend 时由烘焙模型顶替 */
+
+gate.add(box(4.5,1.34,.2,M.stoneD,0,8.45,.55));
+var signMat=inkMat(plaqueTex("中国奶娃大学","#173F66","#F3EAD5",1024,288,148),.8);
+var sign=new T.Mesh(new T.PlaneGeometry(4.2,1.16),signMat);
+sign.position.set(0,8.45,.67);gate.add(sign);
+var signB=sign.clone();signB.rotation.y=Math.PI;signB.position.set(0,8.45,.43);gate.add(signB);
+[[-5.0,"奶院"],[5.0,"娃院"]].forEach(function(o){
+  var s=new T.Mesh(new T.PlaneGeometry(2.3,.56),
+    inkMat(plaqueTex(o[1],"#2E4C74","#EFE6CE",512,128,64)));
+  s.position.set(o[0],6.66,.56);gate.add(s);
+  var b=s.clone();b.rotation.y=Math.PI;b.position.z=-.56;gate.add(b);
+});
+var N_SIGN=gate.children.length;     /* ↑ 匾额与院名牌，永远保留 */
+/* 校区围栏：连续墙身 + 压顶 + 望柱，而不是一颗颗白积木 */
+[-1,1].forEach(function(s){
+  var cx=s*15.6;
+  gate.add(box(15.6,.20,.92,M.stoneD,cx,.16,0));
+  gate.add(box(15.0,.86,.60,M.stoneD,cx,.66,0));
+  gate.add(box(15.6,.15,.82,M.stone,cx,1.15,0));
+  for(var i=0;i<6;i++){
+    var x=s*(8.5+i*2.86);
+    gate.add(box(.46,1.34,.46,M.stone,x,.72,0));
+    gate.add(box(.60,.13,.60,M.stoneD,x,1.45,0));
+    var fin=mesh(new T.SphereGeometry(.20,14,12),M.stoneD,x,1.66,0);
+    fin.scale.y=1.25;gate.add(fin);
+    gate.add(ao(1.5,.40,x,.05,0));
+  }
+  for(var k=0;k<7;k++)gate.add(ao(3.2,.17,s*(9.4+k*2.1),.05,0));
+});
+var N_ALL=gate.children.length;
+
+/* ══ 7. 树：两层噪声位移冠 + 分枝 + 风摆 ═══════════════ */
+function canopy(mat,r,seed){
+  var g=new T.IcosahedronGeometry(r,2),p=g.attributes.position,v=new T.Vector3();
+  for(var i=0;i<p.count;i++){
+    v.fromBufferAttribute(p,i);
+    var n=Math.sin(v.x*2.1+seed)*Math.cos(v.y*1.7+seed*1.3)*Math.sin(v.z*2.4+seed*.7)
+         +Math.sin(v.x*5.3-seed*.6)*Math.cos(v.z*4.7+seed)*.42;
+    v.multiplyScalar(1+n*.17);p.setXYZ(i,v.x,v.y,v.z);
+  }
+  g.computeVertexNormals();
+  var m=new T.Mesh(g,mat);m.castShadow=m.receiveShadow=true;return m;
+}
+var trees=[],LEAFM=[M.leafA,M.leafB,M.leafC];
+function tree(x,z,s){
+  var g=new T.Group(),seed=x*1.7+z*.9;
+  var tk=mesh(new T.CylinderGeometry(.11*s,.30*s,2.7*s,10),M.trunk,0,1.35*s,0);
+  tk.rotation.z=(Math.random()-.5)*.07;g.add(tk);
+  g.add(mesh(new T.CylinderGeometry(.30*s,.52*s,.42*s,10),M.trunk,0,.16*s,0));
+  var LOB=[[0,3.15,0,1.18,1],[.66,2.66,.30,.80,0],[-.58,2.76,-.34,.86,0],[.06,3.78,.12,.70,2],
+           [-.22,2.94,-.66,.58,0],[.44,3.42,-.52,.60,2],[-.66,3.36,.42,.56,1]];
+  LOB.forEach(function(b,i){
+    if(i>0&&i<3){                                   /* 前两根主枝从 trunk 顶分出去 */
+      var br=mesh(new T.CylinderGeometry(.045*s,.085*s,1.25*s,7),M.trunk,
+                  b[0]*s*.45,2.72*s,b[2]*s*.45);
+      br.rotation.set(-b[2]*.42,0,b[0]*.46);g.add(br);
+    }
+    var c=canopy(LEAFM[b[4]],b[3]*s*.9,seed+i*1.7);
+    c.position.set(b[0]*s,b[1]*s,b[2]*s);
+    c.scale.y=.84;c.rotation.y=i*1.1;
+    if(i>2)c.castShadow=false;                       /* 只让外圈大团投影，省一半阴影面 */
+    g.add(c);
+  });
+  g.position.set(x,0,z);g.userData.ph=Math.random()*6.28;
+  g.add(ao(3.6*s,.38,0,.05,0));
+  trees.push(g);scene.add(g);return g;
+}
+for(var i=0;i<8;i++){
+  var z=-13-i*5.6,s=.95+Math.random()*.35;
+  tree(-7.6,z,s);tree(7.6,z-.9,s*.95);
+}
+tree(-11.4,-15.6,1.45);tree(11.4,-15.6,1.38);
+tree(-17.5,-6,1.2);tree(18,-8,1.25);tree(-20,6,1.1);tree(20.5,7,1.15);
+
+/* ══ 8. 帐篷 / 易拉宝 / 横幅 / 气球 / 路灯 / 长椅 ════════ */
+var wavePlanes=[];
+var tents=[],tentRd=M.tentR.clone(),tentBd=M.tentB.clone();
+tentRd.side=T.DoubleSide;tentBd.side=T.DoubleSide;
+function tent(x,z,mat,ry){
+  var g=new T.Group(), md=mat===M.tentR?tentRd:tentBd;
+  var top=mesh(new T.ConeGeometry(2.6,1.5,4),mat,0,2.62,0);
+  top.rotation.y=Math.PI/4;g.add(top);
+  g.add(box(4.6,.14,4.6,mat,0,1.84,0));
+  /* 四面垂沿：帐篷下摆没有这条就只是一块斜板 */
+  for(var e=0;e<4;e++){
+    var ang=Math.PI/4+e*Math.PI/2, sx=Math.sin(ang), sz=Math.cos(ang);
+    var val=mesh(new T.PlaneGeometry(3.26,.46,12,2),md,sx*1.62,1.58,sz*1.62);
+    val.rotation.y=Math.atan2(sx,sz);val.castShadow=true;g.add(val);
+    g.userData.vals=g.userData.vals||[];g.userData.vals.push({m:val,
+      base:val.geometry.attributes.position.array.slice()});
+  }
+  [[-2,-2],[2,-2],[-2,2],[2,2]].forEach(function(p){
+    g.add(mesh(new T.CylinderGeometry(.06,.06,1.85,8),M.pole,p[0],.92,p[1]));
+  });
+  /* 桌 + 桌布（只垂前侧两面，露出桌腿才像现场） */
+  g.add(box(2.2,.1,.95,M.table,-.05,1.04,.15));
+  var cf=mesh(new T.PlaneGeometry(2.24,1.02),M.cloth,-.05,.55,.63);
+  cf.castShadow=true;g.add(cf);
+  var cs=mesh(new T.PlaneGeometry(.99,1.02),M.cloth,.97,.55,.15);
+  cs.rotation.y=Math.PI/2;g.add(cs);
+  [-1,1].forEach(function(s){
+    g.add(mesh(new T.CylinderGeometry(.05,.05,.55,7),M.pole,-.05+s*1.05,.74,.15));});
+  for(var k=0;k<9;k++){
+    g.add(box(.22+Math.random()*.2,.06+Math.random()*.16,.3,M.cloth,
+      -1+Math.random()*2,1.14+Math.random()*.06,-.2+Math.random()*.6));
+  }
+  var b=new T.Mesh(new T.PlaneGeometry(1.1,1.7),inkMat(bannerTex("报 到 处",
+      ["数字媒体学院","计算机与人工智能","动画学院","播音与主持学院","登记 · 领物资"],"#1B4B8D"),.55));
+  b.position.set(2.44,1.02,0);b.rotation.y=-Math.PI/2;b.castShadow=true;g.add(b);
+  g.add(mesh(new T.CylinderGeometry(.04,.04,1.9,8),M.pole,2.44,.95,.62));
+  g.add(ao(6.2,.42,0,.05,0));
+  g.position.set(x,0,z);g.rotation.y=ry||0;scene.add(g);tents.push(g);return g;
+}
+tent(-4.9,-3.4,M.tentR,.12);
+tent(5.1,-6.8,M.tentB,-.16);
+tent(-5.3,-10.2,M.tentB,.2);
+
+function hangingBanner(x1,x2,y,z,text){
+  var w=Math.abs(x2-x1);
+  var g=new T.PlaneGeometry(w,.86,26,5);
+  var b=new T.Mesh(g,inkMat(wideBannerTex(text,"#9E241C"),.55));
+  b.position.set((x1+x2)/2,y,z);b.castShadow=true;
+  b.userData.base=g.attributes.position.array.slice();
+  wavePlanes.push(b);scene.add(b);
+  [-1,1].forEach(function(s){
+    b.add(mesh(new T.CylinderGeometry(.03,.03,.34,6),M.pole,s*(w/2-.06),.52,0));
+  });
+}
+hangingBanner(-2.34,2.34,6.72,-13.24,"欢迎新同学");
+
+function balloons(x,z){
+  var g=new T.Group(),cols=[0xC4402F,0xD09226,0x2F6FBE,0x3E8E52];
+  g.add(mesh(new T.CylinderGeometry(.035,.055,1.55,8),M.pole,0,.78,0));
+  for(var i=0;i<5;i++){
+    var a=i/5*6.283, r=.20;
+    var b=mesh(new T.SphereGeometry(.155,16,14),
+      std({color:cols[i%4],roughness:.24,metalness:.05,envMapIntensity:1.1}),
+      Math.cos(a)*r,1.72+Math.random()*.34,Math.sin(a)*r);
+    b.scale.y=1.16;g.add(b);
+  }
+  g.position.set(x,0,z);g.add(ao(.9,.26,0,.05,0));scene.add(g);return g;
+}
+balloons(-3.2,-1.6);balloons(3.4,-5.0);
+
+function lamp(x,z){
+  var g=new T.Group();
+  g.add(mesh(new T.CylinderGeometry(.075,.13,4.9,12),M.pole,0,2.45,0));
+  g.add(mesh(new T.CylinderGeometry(.19,.27,.24,12),M.pole,0,.12,0));
+  var arm=mesh(new T.TorusGeometry(.30,.045,6,18,Math.PI),M.pole,.24,4.86,0);
+  arm.rotation.z=-Math.PI/2;arm.rotation.y=Math.PI/2;g.add(arm);
+  g.add(box(.44,.10,.26,std({color:0x2A2418,emissive:0xFFD9A0,emissiveIntensity:3.2,
+    roughness:.4}),.52,4.78,0));
+  g.position.set(x,0,z);g.add(ao(1.5,.38,0,.05,0));scene.add(g);
+}
+[-1,1].forEach(function(s){for(var k=0;k<3;k++)lamp(s*6.6,2.0-k*10);});
+
+function bench(x,z,ry){
+  var g=new T.Group();
+  g.add(box(1.9,.1,.5,M.table,0,.46,0));
+  g.add(box(1.9,.5,.09,M.table,0,.78,-.22));
+  [-.75,.75].forEach(function(o){g.add(box(.12,.44,.5,M.pole,o,.22,0));});
+  g.position.set(x,0,z);g.rotation.y=ry||0;
+  g.add(ao(2.6,.38,0,.05,0));scene.add(g);
+}
+bench(-9.2,-6.2,.3);bench(9.4,-8.6,-.4);bench(-11.2,4,.1);
+
+/* ══ 9. 人群：腿/躯干/头/发/行李/接触阴影 六组实例 ═════ */
+var CROWD=hiEnd?74:28;
+function im(geo,mat,n,shadow){
+  var m=new T.InstancedMesh(geo,mat,n);
+  m.castShadow=!!shadow;m.receiveShadow=true;m.frustumCulled=false;scene.add(m);return m;
+}
+var LEGW=im(new T.BoxGeometry(.145,.50,.19),std({color:0xffffff,roughness:.92,envMapIntensity:.55}),CROWD);
+var LEGE=im(new T.BoxGeometry(.145,.50,.19),std({color:0xffffff,roughness:.92,envMapIntensity:.55}),CROWD);
+var ARMW=im(new T.CapsuleGeometry(.052,.32,3,8),std({color:0xffffff,roughness:.88,envMapIntensity:.6}),CROWD);
+var ARME=im(new T.CapsuleGeometry(.052,.32,3,8),std({color:0xffffff,roughness:.88,envMapIntensity:.6}),CROWD);
+var TORS=im(new T.CapsuleGeometry(.172,.42,4,12),std({color:0xffffff,roughness:.86,envMapIntensity:.65}),CROWD,true);
+var HEAD=im(new T.SphereGeometry(.128,14,12),std({color:0xffffff,roughness:.62,envMapIntensity:.75}),CROWD,true);
+var HAIR=im(new T.SphereGeometry(.134,14,10),std({color:0xffffff,roughness:.95,envMapIntensity:.4}),CROWD);
+var BAG =im(bevelBox(.38,.54,.19,.06,2),std({color:0xffffff,roughness:.72,envMapIntensity:.6}),26,true);
+var AOI =new T.InstancedMesh(AO_GEO,new T.MeshBasicMaterial({map:aoTex(),color:0,transparent:true,
+  opacity:.30,depthWrite:false,toneMapped:false}),CROWD);
+AOI.frustumCulled=false;AOI.renderOrder=1;scene.add(AOI);
+var PARTS=[LEGW,LEGE,ARMW,ARME,TORS,HEAD,HAIR,AOI];
+var crowd=[],dummy=new T.Object3D();
+var jacket=[0x2F4858,0x7A3B3B,0x3D5B3F,0x54504A,0x2C3E63,0x6B5B3E,0x8C6D4A,0x404F63,
+            0x9A5B2E,0x365C6B,0x6E3A52,0x4C5A32];
+var trouser=[0x2B3038,0x3A3F46,0x4A4038,0x2E3A48,0x514A42,0x24282E];
+var skin=[0xE8C4A0,0xD9AE86,0xC08C63,0x8D6242,0xF0D2B4];
+var hairc=[0x1B1714,0x2A211B,0x3D2E22,0x14151A,0x4A3A2C];
+var bagc=[0x1B4B8D,0x8E2018,0x2E4A38,0x5A4632,0x3A3F52];
+function rnd(a){return a[(Math.random()*a.length)|0];}
+/* 报到处前排队的固定站位：先有人排队，场景才是「报到日」 */
+var SLOTS=[[-4.0,-1.1],[-5.9,-1.1],[-4.0,.2],[-5.9,.2],[-3.0,-2.4],
+           [4.1,-4.5],[6.1,-4.5],[4.1,-3.1],[6.3,-8.2],[4.4,-8.4],
+           [-4.3,-8.6],[-6.3,-8.9],[-3.4,-11.9],[-5.4,-12.2],
+           [0,-10.6],[1.5,-12.6],[-1.4,-13.0]];
+for(var c2=0;c2<CROWD;c2++){
+  var p,q=c2<SLOTS.length;
+  if(q){
+    p={x:SLOTS[c2][0],z:SLOTS[c2][1],vx:0,vz:0,stat:true};
+  }else{
+    var near=Math.random()<.45;
+    p={x:near?(Math.random()-.5)*9:(Math.random()<.5?-1:1)*(4.5+Math.random()*8),
+       z:-2-Math.random()*20,
+       vx:(Math.random()-.5)*.34,vz:(Math.random()-.5)*.24,stat:false};
+  }
+  p.ry=(q?Math.PI:0)+(Math.random()-.5)*.7;
+  p.s=1.02+Math.random()*.17;p.ph=Math.random()*6.28;
+  p.arm=.5+Math.random()*.5;
+  p.c=new T.Color(rnd(jacket));p.l=new T.Color(rnd(trouser));
+  p.h=new T.Color(rnd(skin));p.hr=new T.Color(rnd(hairc));
+  p.bag=!q&&Math.random()<.34;
+  p.bc=new T.Color(rnd(bagc));
+  crowd.push(p);
+}
+(function paint(){                              /* 颜色静态：只在初始化上一次实例属性 */
+  for(var i=0;i<CROWD;i++){var p=crowd[i];
+    LEGW.setColorAt(i,p.l);LEGE.setColorAt(i,p.l);
+    ARMW.setColorAt(i,p.c);ARME.setColorAt(i,p.c);
+    TORS.setColorAt(i,p.c);HEAD.setColorAt(i,p.h);HAIR.setColorAt(i,p.hr);}
+  PARTS.forEach(function(m){if(m.instanceColor)m.instanceColor.needsUpdate=true;});
+})();
+function place(m,i,x,y,z,ry,s,sx,sy,sz){
+  dummy.position.set(x,y,z);dummy.rotation.set(0,ry,0);
+  dummy.scale.set(s*(sx||1),s*(sy||1),s*(sz||1));dummy.updateMatrix();
+  m.setMatrixAt(i,dummy.matrix);
+}
+function updateCrowd(t,dt){
+  var bagN=0;
+  for(var i=0;i<CROWD;i++){
+    var p=crowd[i];
+    if(!p.stat){
+      p.x+=p.vx*dt;p.z+=p.vz*dt;
+      if(p.x<-13||p.x>13)p.vx*=-1;
+      if(p.z<-26||p.z>10)p.vz*=-1;
+      p.ry=Math.atan2(-p.vx,-p.vz);
+    }
+    var moving=p.stat?0:1;
+    var sw=reduce?0:Math.sin(t*3.0+p.ph);
+    var bob=reduce?0:sw*.028*moving;
+    var lean=reduce?0:(p.stat?Math.sin(t*.75+p.ph)*.030          /* 排队的人重心轻移 */
+                            :Math.sin(t*3.0+p.ph)*.035);
+    var s=p.s, x=p.x, z=p.z;
+    var rx=Math.cos(p.ry), rz=-Math.sin(p.ry);      /* 右手方向 */
+    var fx=Math.sin(p.ry), fz=Math.cos(p.ry);        /* 面朝方向 */
+    var step=reduce?0:Math.sin(t*3.0+p.ph)*.055*moving;
+    var swing=reduce?0:Math.sin(t*3.0+p.ph+Math.PI)*.075*moving;
+    var lift=reduce?0:Math.max(0,Math.sin(t*3.0+p.ph))*.028*moving;
+    place(LEGW,i,x+rx*.095,.25*s+lift,z+rz*.095,p.ry+step,s);
+    place(LEGE,i,x-rx*.095,.25*s      ,z-rz*.095,p.ry-step,s);
+    place(ARMW,i,x+rx*.215+fx*swing,.855*s+bob,z+rz*.215+fz*swing,p.ry,s);
+    place(ARME,i,x-rx*.215-fx*swing,.855*s+bob,z-rz*.215-fz*swing,p.ry,s);
+    place(TORS,i,x,.855*s+bob,z,p.ry,s,1+lean*.6,1,1-lean*.6);
+    place(HEAD ,i,x,1.335*s+bob,z,p.ry+lean*.8,s);
+    place(HAIR ,i,x,1.360*s+bob,z,p.ry+lean*.8,s,1,.72,1);
+    place(AOI  ,i,x,.05,z,0,s*1.15);
+    if(p.bag&&bagN<26){
+      place(BAG,bagN++,x+rx*.34,.29*s,z+rz*.34,p.ry,s*.9);
+      BAG.setColorAt(bagN-1,p.bc);
+    }
+  }
+  PARTS.forEach(function(m){m.instanceMatrix.needsUpdate=true;});
+  BAG.count=bagN;BAG.instanceMatrix.needsUpdate=true;
+  if(BAG.instanceColor)BAG.instanceColor.needsUpdate=true;
+}
+
+/* ══ 10. 远景：马路 + 楼群（裙房、设备层、屋顶机房） ═══ */
+function asphaltMaps(){
+  var S=256,h=cvs(S,S),g=h.getContext("2d");
+  g.fillStyle="#808080";g.fillRect(0,0,S,S);noise(g,S,S,.5,60,200);
+  var col=cvs(S,S),cg=col.getContext("2d");
+  cg.fillStyle="#4A4E54";cg.fillRect(0,0,S,S);noise(cg,S,S,.55,60,120);
+  cg.fillStyle="rgba(228,214,150,.85)";
+  for(var k=0;k<4;k++)cg.fillRect(S*.5-3,k*(S/4)+14,6,S/4-34);
+  return {map:tex(col,[1,14]),normal:tex(toNormal(h,1.5),[1,14],true)};
+}
+var am=asphaltMaps();
+var road=mesh(new T.PlaneGeometry(190,13),std({map:am.map,normalMap:am.normal,
+  roughness:.66,metalness:.03,envMapIntensity:.75,color:0xB6BCC4}),0,.016,-44);
+road.rotation.x=-Math.PI/2;road.castShadow=false;scene.add(road);
+function block(w,h,d,x,z,ry){
+  var g=new T.Group();
+  var b=mesh(new T.BoxGeometry(w,h*.86,d),[M.wall,M.wall,M.wallT,M.wallP,M.wall,M.wall]);
+  b.position.set(0,h*.43+1.3,0);g.add(b);
+  g.add(box(w+1.6,1.3,d+1.6,M.wallP,0,.65,0));                /* 裙房 */
+  g.add(box(w*.92,.5,d*.92,M.wallP,0,h*.86+1.56,0));
+  var rw=w*.34,rd=d*.4;                                       /* 屋顶机房 */
+  g.add(box(rw,1.9,rd,M.wallT,-w*.18,h*.86+2.7,0));
+  for(var i=0;i<3;i++)                                        /* 空调外机 */
+    g.add(box(.9,.5,.7,M.wallP,w*.12+i*1.4,h*.86+2.0,d*.18));
+  g.position.set(x,0,z);g.rotation.y=ry||0;scene.add(g);return g;
+}
+block(26,17,9,-33,-62,.20);block(19,34,8,36,-66,-.18);block(34,11,9,2,-86,0);
+block(15,44,7,55,-58,.46);block(16,12,22,-57,-54,-.30);block(23,21,8,-18,-76,.09);
+block(14,29,8,25,-56,-.12);block(28,15,9,66,-82,.28);
+block(24,24,9,-66,-74,-.22);block(30,12,10,-4,-104,.1);block(12,38,7,46,-88,.2);
+
+/* ══ 11. 奶娃（按参考图：梨形无脖、前腹外凸、奶油蛋形腹斑、
+        薄荷绿眼白+大黑瞳、极细微笑线、手脚为深橄榄色带指/趾） ═══════ */
+var hero=new T.Group();
+(function(){
+  var EYES=[];
+  /* 侧影：底部宽、向上连续收成圆顶；最宽处在 t≈.38 */
+  var PROF=[[0.000,.190],[0.020,.258],[0.060,.306],[0.120,.352],[0.200,.384],
+            [0.290,.399],[0.380,.405],[0.470,.401],[0.550,.389],[0.620,.368],
+            [0.680,.342],[0.740,.307],[0.795,.266],[0.845,.222],[0.888,.176],
+            [0.925,.130],[0.957,.088],[0.982,.050],[1.000,0]];
+  function radAt(t){
+    if(t<=0)return PROF[0][1];
+    for(var i=0;i<PROF.length-1;i++){
+      if(t<=PROF[i+1][0]||i===PROF.length-2){
+        var a=PROF[i],b=PROF[i+1],k=(t-a[0])/Math.max(1e-6,b[0]-a[0]);
+        k=Math.max(0,Math.min(1,k));k=k*k*(3-2*k);
+        return a[1]+(b[1]-a[1])*k;
+      }
+    }
+    return 0;
+  }
+  /* 把回转体压成参考图那种非对称侧影：前腹鼓出来、上半身略后仰、后背压平 */
+  function bulge(x,t,z){
+    var h=Math.hypot(x,z)||1e-6, front=z/h;
+    var belly=Math.exp(-Math.pow((t-.40)/.30,2))*.125;
+    var lean=Math.max(0,(t-.68)/.32); lean=lean*lean*.085;
+    return front*belly-lean*(front*.35+1);
+  }
+  var profPts=PROF.map(function(q){return new T.Vector2(q[1],q[0]);});
+  var bodyGeo=new T.LatheGeometry(profPts,72);
+  (function(){
+    var a=bodyGeo.attributes.position;
+    for(var i=0;i<a.count;i++){
+      var x=a.getX(i),y=a.getY(i),z=a.getZ(i);
+      a.setZ(i,z+bulge(x,y,z));
+    }
+    bodyGeo.computeVertexNormals();
+  })();
+  var body=new T.Mesh(bodyGeo,M.hero);
+  body.castShadow=body.receiveShadow=true;hero.add(body);
+
+  /* 腹斑：贴着体表生成的曲面片，软边靠贴图 alpha，不是贴一张硬边圆片 */
+  (function(){
+    var t0=.085,t1=.585,ph0=-.86,ph1=.86,nu=26,nv=16;
+    var pos=[],uv=[],idx=[];
+    for(var j=0;j<=nv;j++){
+      var t=t0+(t1-t0)*j/nv, r=radAt(t)*1.006;
+      for(var i=0;i<=nu;i++){
+        var ph=ph0+(ph1-ph0)*i/nu;
+        var x=Math.sin(ph)*r, z=Math.cos(ph)*r;
+        pos.push(x,t,z+bulge(x,t,z)+.004);
+        uv.push(i/nu,j/nv);
+      }
+    }
+    for(j=0;j<nv;j++)for(i=0;i<nu;i++){
+      var A=j*(nu+1)+i,B=A+1,C=A+nu+1,D=C+1;
+      idx.push(A,C,B,B,C,D);
+    }
+    var g=new T.BufferGeometry();
+    g.setAttribute("position",new T.Float32BufferAttribute(pos,3));
+    g.setAttribute("uv",new T.Float32BufferAttribute(uv,2));
+    g.setIndex(idx);g.computeVertexNormals();
+    var m=new T.Mesh(g,std({map:bellyTex(),transparent:true,roughness:.46,
+      side:T.DoubleSide,envMapIntensity:.30,depthWrite:false}));
+    m.renderOrder=1;m.receiveShadow=true;hero.add(m);
+  })();
+
+  /* 眼睛：大眼白 + 占六成的大黑瞳 + 一点高光 */
+  var EYE_T=.905, EYE_X=.098;
+  var er=radAt(EYE_T);
+  [-1,1].forEach(function(sd){
+    var ex=EYE_X*sd, ez=Math.sqrt(Math.max(1e-4,er*er-ex*ex))*.96;
+    var dz=bulge(ex,EYE_T,ez);
+    var e=mesh(new T.SphereGeometry(.082,20,16),M.eyeW,ex,EYE_T,ez+dz-.010);
+    e.userData.r=.082;EYES.push(e);hero.add(e);
+    var pu=mesh(new T.SphereGeometry(.048,18,14),M.eyeB,
+      ex*1.02,EYE_T-.004,ez+dz+.060);
+    pu.userData.r=.048;EYES.push(pu);pu.scale.set(1,1,.55);hero.add(pu);
+    hero.add(mesh(new T.SphereGeometry(.017,10,8),M.gloss,
+      ex*1.02+.023*sd,EYE_T+.034,ez+dz+.087));
+  });
+
+  /* 嘴：极细的一道弧，不是椭圆片 */
+  (function(){
+    var mt=.838, mr=radAt(mt);
+    var mz=Math.sqrt(Math.max(1e-4,mr*mr-.0009))*.99;
+    var dz=bulge(0,mt,mz);
+    var mo=new T.Mesh(new T.TorusGeometry(.072,.0085,6,22,1.15),M.mouth);
+    mo.rotation.z=-Math.PI/2-.575;
+    mo.position.set(0,mt,mz+dz-.004);
+    hero.add(mo);
+  })();
+
+  /* 腿脚：短粗腿 + 深橄榄大脚带三趾 */
+  [-1,1].forEach(function(sd){
+    var leg=new T.Group();
+    leg.add(mesh(new T.CylinderGeometry(.128,.158,.30,16),M.hero,0,-.15,0));
+    leg.add(mesh(new T.SphereGeometry(.162,16,12),M.hero,0,0,0));
+    var foot=new T.Group();foot.position.set(0,-.30,0);
+    var sole=mesh(bevelBox(.215,.085,.315,.04,2),M.dark,0,-.020,.055);
+    foot.add(sole);
+    var ankle=mesh(new T.SphereGeometry(.108,14,12),M.dark,0,.030,.170);
+    ankle.scale.set(1,.72,.9);foot.add(ankle);
+    for(var k=-1;k<2;k++){
+      var toe=mesh(new T.SphereGeometry(.040,12,10),M.dark,k*.062,-.030,.205);
+      toe.scale.set(1,.80,1.35);foot.add(toe);
+    }
+    leg.add(foot);
+    leg.position.set(sd*.175,-.005,.02);
+    leg.rotation.z=-sd*.10;
+    hero.add(leg);
+    hero.add(ao(.62,.34,sd*.185,.055,.06));
+  });
+
+  /* 手臂：先给方向再定姿势，比手调欧拉角可靠 */
+  function buildArm(sd,dir,bend){
+    var pivot=new T.Group();                 /* 动画只动这一层 */
+    pivot.position.set(sd*.455,.595,.075);
+    var g=new T.Group();                     /* 姿势锁在这一层 */
+    g.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),
+      new T.Vector3(dir[0],dir[1],dir[2]).normalize());
+    g.add(mesh(new T.SphereGeometry(.145,16,12),M.hero,0,0,0));
+    g.add(mesh(new T.CylinderGeometry(.104,.140,.28,16),M.hero,0,-.145,0));
+    var fore=new T.Group();fore.position.set(0,-.29,0);
+    fore.add(mesh(new T.SphereGeometry(.110,14,12),M.hero,0,0,0));
+    fore.add(mesh(new T.CylinderGeometry(.086,.108,.23,14),M.hero,0,-.115,0));
+    fore.rotation.x=bend;
+    var hand=new T.Group();hand.position.set(0,-.235,0);
+    var palm=mesh(new T.SphereGeometry(.112,18,14),M.dark,0,-.058,0);
+    palm.scale.set(.94,.86,1.14);hand.add(palm);
+    for(var i=0;i<4;i++){
+      var a=(i-1.5)*.30;
+      var f=mesh(new T.CapsuleGeometry(.025,.060,3,8),M.dark,
+        Math.sin(a)*.055,-.145,Math.cos(a)*.048);
+      f.rotation.x=.22;f.rotation.z=a;hand.add(f);
+    }
+    hand.add(mesh(new T.SphereGeometry(.033,10,8),M.dark,-.088*sd,-.045,.052));
+    fore.add(hand);g.add(fore);
+    pivot.add(g);hero.add(pivot);
+    return pivot;
+  }
+  /* 屏幕右侧那只举起挥手，另一只搭在肚子上 */
+  var armR=buildArm(-1,[-.46,.78,.42],.34);
+  var armL=buildArm( 1,[-.11,-.20,.97],-.52);
+  hero.userData={armR:armR,armL:armL,eyes:EYES};
+
+  /* 报到装备：只留一只地上的箱子，参考图身上没有背包 */
+  var caseG=new T.Group();
+  caseG.add(box(.44,.32,.16,std({normalMap:sm.normal,color:0x8A4A2C,roughness:.72,
+    envMapIntensity:.7}),0,.17,0));
+  caseG.add(box(.18,.05,.06,M.pole,0,.36,0));
+  caseG.add(box(.46,.05,.18,std({color:0x6B3820,roughness:.8}),0,.19,0));
+  caseG.position.set(-.62,-.300,.30);caseG.rotation.y=.5;hero.add(caseG);
+})();
+var HS=1.86;hero.scale.setScalar(HS);
+hero.position.set(2.05,.44*HS,-4.3);hero.rotation.y=.30;   /* 实测脚底比局部原点还低，抬高补掉 */
+scene.add(hero);
+var heroAO=ao(3.6,.34,2.05,.05,-4.3);scene.add(heroAO);
+
+/* ══ 12. 落叶 ═════════════════════════════════════════ */
+var LEAVES=reduce?0:110,lp=new Float32Array(LEAVES*3),ls=[];
+for(var l=0;l<LEAVES;l++){
+  lp[l*3]=(Math.random()-.5)*34;lp[l*3+1]=Math.random()*14+1;lp[l*3+2]=-34+Math.random()*34;
+  ls.push({sp:.4+Math.random()*.6,ph:Math.random()*6.28,amp:.6+Math.random()*1.2});
+}
+var lg=new T.BufferGeometry();
+lg.setAttribute("position",new T.BufferAttribute(lp,3));
+scene.add(new T.Points(lg,new T.PointsMaterial({map:leafTex(),size:.34,transparent:true,
+  depthWrite:false,opacity:.96,sizeAttenuation:true})));
+
+/* ══ 13. 灯光：IBL 打底，低角度太阳给方向与长影 ════════ */
+scene.add(new T.HemisphereLight(0xC9E0F5,0x6B5C44,.40));
+var sun=new T.DirectionalLight(0xFFD498,2.75);
+sun.position.copy(SUN_POS);sun.castShadow=true;
+var MS=hiEnd?2048:1024;sun.shadow.mapSize.set(MS,MS);
+var s2=sun.shadow.camera;s2.left=-34;s2.right=34;s2.top=30;s2.bottom=-30;s2.near=1;s2.far=118;
+sun.shadow.bias=-.0005;sun.shadow.normalBias=.032;sun.shadow.radius=1.7;
+scene.add(sun);scene.add(sun.target);
+var fill=new T.DirectionalLight(0xD8C6A8,.30);fill.position.set(-16,11,14);scene.add(fill);
+[-1,1].forEach(function(s){
+  var sp=new T.SpotLight(0xFFDFA4,26,26,T.MathUtils.degToRad(19),.62,1.6);
+  sp.position.set(s*4.4,1.2,-12.2);sp.target.position.set(s*1.1,8.4,-14);
+  scene.add(sp);scene.add(sp.target);
+});
+var heroFill=new T.PointLight(0xFFE4C2,7,9.5,2);
+heroFill.position.set(2.05,2.3,.6);scene.add(heroFill);
+var warm=new T.PointLight(0xFFC070,14,11,2);warm.position.set(-4.9,1.7,-3.4);scene.add(warm);
+var warm2=new T.PointLight(0xFFC070,11,10,2);warm2.position.set(5.1,1.7,-6.8);scene.add(warm2);
+
+/* ══ 14. 后期链：泛光 → 调色 → FXAA ════════════════════ */
+var Grade={
+  uniforms:{tDiffuse:{value:null},vig:{value:.40},grain:{value:.026},sat:{value:1.02},
+            lift:{value:new T.Vector3(.008,.011,.024)},
+            gain:{value:new T.Vector3(1.030,1.0,.955)},
+            expo:{value:renderer.toneMappingExposure},time:{value:0}},
+  vertexShader:"varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
+  fragmentShader:[
+    "uniform sampler2D tDiffuse;uniform float vig,grain,sat,expo,time;uniform vec3 lift,gain;",
+    /* 渲进 render target 时 three 会跳过色调映射（只直出屏幕才做），
+       所以 ACES 与曝光必须在这里补回来，否则整幅偏暗且高光硬切。 */
+    "vec3 aces(vec3 x){return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);}",
+    "varying vec2 vUv;",
+    "float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}",
+    /* EffectComposer 的中间缓冲是线性空间，渲染到屏幕不会自动转 sRGB；
+       缺这一步，高质量档会比低质量档暗一档。这里显式补上。 */
+    "vec3 enc(vec3 c){c=max(c,vec3(0.0));",
+    "  return mix(pow((c+.055)/1.055,vec3(2.4)),c*12.92,step(c,vec3(.04045)));}",
+    "void main(){",
+    "  vec3 c=aces(texture2D(tDiffuse,vUv).rgb*expo);",
+    "  c=c*gain+lift;",
+    "  float l=dot(c,vec3(.2126,.7152,.0722));",
+    "  c=mix(vec3(l),c,sat);",
+    "  c=c-(c*c*c)*.17;",                       /* 高光软肩：白石头不再糊成一片 */
+    "  vec2 q=vUv-.5;c*=1.0-dot(q,q)*vig;",
+    "  c=enc(c);",
+    "  c+=(h(vUv*vec2(1920.,1080.)+fract(time))-.5)*grain;",
+    "  gl_FragColor=vec4(max(c,vec3(0.0)),1.0);}"
+  ].join("\n")
+};
+var composer=null,fxaa=null,grade=null;
+if(WANT_POST&&T.EffectComposer){
+  composer=new T.EffectComposer(renderer);
+  composer.addPass(new T.RenderPass(scene,camera));
+  composer.addPass(new T.UnrealBloomPass(
+    new T.Vector2(innerWidth,innerHeight),.20,.58,.92));
+  grade=new T.ShaderPass(Grade);composer.addPass(grade);
+  fxaa=new T.ShaderPass(T.FXAAShader);composer.addPass(fxaa);
+  fxaa.renderToScreen=true;
+}
+function sizeFX(){
+  if(!composer)return;
+  var w=innerWidth*DPR,h=innerHeight*DPR;      /* 按绘制缓冲尺寸，不是 CSS 像素 */
+  composer.setSize(w,h);
+  if(fxaa)fxaa.material.uniforms.resolution.value.set(1/w,1/h);
+}
+sizeFX();
+
+/* ══ 15. 自写轨道控制器 ═══════════════════════════════ */
+var HOME={theta:.34,phi:1.505,r:24,ty:3.7};
+var orb={theta:HOME.theta,phi:HOME.phi,r:HOME.r,tTheta:HOME.theta,tPhi:HOME.phi,tR:HOME.r,vTheta:0,
+  target:new T.Vector3(0,HOME.ty,-12),minPhi:.60,maxPhi:1.545,minR:6,maxR:64};
+function applyCam(el){
+  var sp=Math.sin(orb.phi);
+  camera.position.set(orb.target.x+orb.r*sp*Math.sin(orb.theta),
+    orb.target.y+orb.r*Math.cos(orb.phi),
+    orb.target.z+orb.r*sp*Math.cos(orb.theta));
+  camera.lookAt(orb.target);
+}
+var ptrs=new Map(),dragging=false,lastX=0,lastY=0,pinch=0,moved=0;
+canvas.addEventListener("pointerdown",function(e){
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===1){dragging=true;lastX=e.clientX;lastY=e.clientY;moved=0;canvas.classList.add("drag");}
+  if(ptrs.size===2){var a=[].slice.call(ptrs.values());pinch=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);}
+  hideTip();
+});
+canvas.addEventListener("pointermove",function(e){
+  if(!ptrs.has(e.pointerId))return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===2){
+    var a=[].slice.call(ptrs.values()),d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+    if(pinch)orb.tR=T.MathUtils.clamp(orb.tR*(pinch/d),orb.minR,orb.maxR);
+    pinch=d;return;
+  }
+  if(!dragging)return;
+  var dx=e.clientX-lastX,dy=e.clientY-lastY;
+  lastX=e.clientX;lastY=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);
+  orb.tTheta-=dx*.0052;
+  orb.tPhi=T.MathUtils.clamp(orb.tPhi-dy*.0042,orb.minPhi,orb.maxPhi);
+  orb.vTheta=-dx*.0052;
+});
+function endPtr(e){
+  ptrs.delete(e.pointerId);
+  if(ptrs.size<2)pinch=0;
+  if(ptrs.size===0){dragging=false;canvas.classList.remove("drag");}
+}
+["pointerup","pointercancel","pointerleave"].forEach(function(ev){canvas.addEventListener(ev,endPtr);});
+canvas.addEventListener("wheel",function(e){
+  e.preventDefault();
+  orb.tR=T.MathUtils.clamp(orb.tR*(1+Math.sign(e.deltaY)*.09),orb.minR,orb.maxR);hideTip();
+},{passive:false});
+
+/* ══ 16. 入场推镜 ═════════════════════════════════════ */
+var intro={t:0,dur:reduce?0:3.4,on:!reduce&&!JUMP};
+orb.r=orb.tR=54;orb.phi=orb.tPhi=.80;orb.theta=orb.tTheta=-.62;
+
+/* ══ 17. 主循环 ═══════════════════════════════════════ */
+var clock=new T.Clock(),tipHidden=false;
+function hideTip(){if(tipHidden)return;tipHidden=true;
+  var t=document.getElementById("tip");if(t)t.classList.add("hide");}
+function frame(){
+  var dt=Math.min(clock.getDelta(),.05),el=clock.elapsedTime;
+  if(intro.on){
+    intro.t+=dt;var p=Math.min(intro.t/intro.dur,1),e=1-Math.pow(1-p,3);
+    orb.tR=54+(HOME.r-54)*e;orb.tPhi=.80+(HOME.phi-.80)*e;
+    orb.tTheta=-.62+(HOME.theta+.62)*e;
+    if(p>=1)intro.on=false;
+  }
+  if(!dragging){orb.tTheta+=orb.vTheta;orb.vTheta*=.90;if(Math.abs(orb.vTheta)<1e-5)orb.vTheta=0;}
+  orb.theta+=(orb.tTheta-orb.theta)*Math.min(1,dt*9);
+  orb.phi+=(orb.tPhi-orb.phi)*Math.min(1,dt*9);
+  orb.r+=(orb.tR-orb.r)*Math.min(1,dt*6.5);
+  if(JUMP)jumpTick(dt);
+  applyCam(el);
+  if(JUMP)jumpCam();   /* 跳转模式直接摆相机，压掉上面的轨道控制器 */
+
+  var br=Math.sin(el*2.4);
+  hero.scale.set(HS*(1-br*.006),HS*(1+br*.014),HS*(1-br*.006));
+  var amp=JUMP?0:(intro.on?0:1);
+  hero.userData.armR.rotation.z=-Math.sin(el*4.6)*.20*amp;
+  hero.userData.armR.rotation.x=Math.sin(el*2.3)*.12*amp;
+  var blink=(el%3.4)>3.22?.10:1;
+  hero.userData.eyes.forEach(function(x){x.scale.y=blink;});
+  if(JUMP)jumpHero();
+
+  if(!reduce){
+    for(var i=0;i<trees.length;i++){
+      var tr=trees[i],w=Math.sin(el*.85+tr.userData.ph)*.022;
+      tr.rotation.z=w;tr.rotation.x=w*.4;
+    }
+    for(var ti=0;ti<tents.length;ti++){
+      var vs=tents[ti].userData.vals||[];
+      for(var vi=0;vi<vs.length;vi++){
+        var vm=vs[vi],vp=vm.m.geometry.attributes.position,vb=vm.base;
+        for(var v2=0;v2<vp.count;v2++){
+          var yy=vb[v2*3+1];
+          vp.array[v2*3+2]=vb[v2*3+2]+Math.sin(yy*5.2+el*3.1+ti)*.055*(.55-yy);
+        }
+        vp.needsUpdate=true;
+      }
+    }
+    for(var b=0;b<wavePlanes.length;b++){
+      var pl=wavePlanes[b],pos=pl.geometry.attributes.position,base=pl.userData.base;
+      for(var v=0;v<pos.count;v++){
+        var x0=base[v*3];
+        pos.array[v*3+2]=Math.sin(x0*1.5+el*2.1)*.14*Math.min(1,Math.abs(x0)/3.3)
+                        +Math.sin(base[v*3+1]*3+el*3)*.02;
+      }
+      pos.needsUpdate=true;
+    }
+    if(LEAVES){
+      var arr=lg.attributes.position.array;
+      for(var k=0;k<LEAVES;k++){
+        var sd=ls[k];
+        arr[k*3+1]-=sd.sp*dt;
+        arr[k*3]+=Math.sin(el*.9+sd.ph)*sd.amp*dt*.8;
+        if(arr[k*3+1]<.2){arr[k*3+1]=11+Math.random()*5;
+          arr[k*3]=(Math.random()-.5)*34;arr[k*3+2]=-34+Math.random()*34;}
+      }
+      lg.attributes.position.needsUpdate=true;
+    }
+  }
+  updateCrowd(el,dt);
+  if(grade)grade.uniforms.time.value=el;
+  if(usePost)composer.render();else renderer.render(scene,camera);
+  FIRST=true;
+  requestAnimationFrame(frame);
+}
+addEventListener("resize",function(){
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight,false);sizeFX();
+});
+
+/* ══ 17b. 可选：Blender 烘焙的校门（?blend） ═════════════
+   高模 13k 面 + 自烘 AO，顶替程序化的台基/柱/梁/斗拱/屋顶/围栏；
+   匾额、欢迎横幅仍用程序化版本，位置不变。载入失败就保持原样。 */
+var STRUCT_ON=true;
+if(/[?&]blend/.test(Q)&&T.GLTFLoader){
+  (function(){
+    var i,struct=[];
+    for(i=0;i<N_STRUCT;i++)struct.push(gate.children[i]);
+    for(i=N_SIGN;i<N_ALL;i++)struct.push(gate.children[i]);
+    var img=new Image();
+    img.onload=function(){
+      var aoT=new T.CanvasTexture(img);
+      aoT.wrapS=aoT.wrapT=T.ClampToEdgeWrapping;aoT.flipY=false;
+      new T.GLTFLoader().load("assets/gate.glb",function(gl){
+        var gm=std({normalMap:fstone,roughnessMap:sm.rough,aoMap:aoT,aoMapIntensity:1,
+          color:0xA79B83,roughness:1,metalness:0,envMapIntensity:.38});
+        grime(gm,.30,7.5,.42);
+        gl.scene.traverse(function(o){
+          if(!o.isMesh)return;
+          o.material=gm;
+          if(o.geometry.attributes.uv)o.geometry.setAttribute("uv2",o.geometry.attributes.uv);
+          o.castShadow=o.receiveShadow=true;
+        });
+        gl.scene.rotation.x=-Math.PI/2;   /* 导出没走 Y-up，Z-up 的模型在 three 里是躺着的 */
+        gl.scene.updateMatrixWorld(true);
+        var bb=new T.Box3().setFromObject(gl.scene);
+        gl.scene.position.y-=bb.min.y+gate.position.y;   /* 落地：不管导出把原点放哪都对 */
+        gate.add(gl.scene);
+        for(var k=0;k<struct.length;k++)struct[k].visible=false;
+        STRUCT_ON=false;
+      },null,function(e){ console.warn("gate.glb 载入失败，保持程序化校门",e); });
+    };
+    img.onerror=function(){ console.warn("gate_ao.png 载入失败，保持程序化校门"); };
+    img.src="assets/gate_ao.png";
+  })();
+}
+
+/* ══ 18. UI ═══════════════════════════════════════════ */
+/* 跳转页没有「画质 / 回到正门」两个按钮，也不该让别人抢走 #go，
+   所以这一段整体换掉（原绑定里 getElementById 会拿到 null 直接抛）。
+   注意 usePost 要留着：主循环里 `if(usePost)composer.render()` 在用它，
+   整段删掉会变成 ReferenceError，把渲染循环当场打死（表现为"永远不跳转"）。 */
+var hi=hiEnd,usePost=!!composer;
+if(!hi){renderer.shadowMap.enabled=false;sun.castShadow=hi;}
+var dlg=document.getElementById("about");
+document.getElementById("about-btn").addEventListener("click",function(){
+  jt.paused=true;dlg.showModal();});
+document.getElementById("close").addEventListener("click",function(){dlg.close();});
+dlg.addEventListener("click",function(e){if(e.target===dlg)dlg.close();});
+
+/* 验收钩子：?still 定帧 + &th=&ph=&r= 摆机位，供无头截图复现 */
+if(/[?&]still/.test(Q)){
+  intro.on=false;
+  orb.theta=orb.tTheta=HOME.theta;orb.phi=orb.tPhi=HOME.phi;orb.r=orb.tR=HOME.r;
+  var gq=function(k,d){var m=new RegExp("[?&]"+k+"=([-0-9.]+)").exec(Q);
+    return m?parseFloat(m[1]):d;};
+  orb.theta=orb.tTheta=gq("th",HOME.theta);orb.phi=orb.tPhi=gq("ph",HOME.phi);
+  orb.r=orb.tR=gq("r",HOME.r);
+  orb.target.set(gq("tx",0),gq("ty",HOME.ty),gq("tz",-12));
+  applyCam();
+  /* 定帧跑法下合成帧极少，CSS 淡入走不完，遮罩会一直盖住画面 */
+  load.style.transition="none";load.style.display="none";
+}
+if(/[?&]probe/.test(Q))setTimeout(function(){
+  var gl=renderer.getContext(),px=new Uint8Array(4);
+  try{gl.readPixels((innerWidth*DPR|0)>>1,(innerHeight*DPR|0)>>1,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);}catch(e){}
+  var d=document.createElement("div");
+  d.style.cssText="position:fixed;right:6px;bottom:6px;z-index:99;background:#000d;color:#0f0;"+
+    "font:11px/1.5 ui-monospace,monospace;padding:6px 8px;border-radius:6px";
+  d.textContent="calls="+renderer.info.render.calls+" tris="+renderer.info.render.triangles+
+    " glErr="+gl.getError()+" lost="+gl.isContextLost()+
+    " px="+Array.prototype.join.call(px,",")+" geo="+renderer.info.memory.geometries+
+    " handR="+hero.userData.armR.children[0].children[1].children[1].getWorldPosition(new T.Vector3()).toArray().map(function(v){return v.toFixed(2);}).join(",")+
+    " handL="+hero.userData.armL.children[0].children[1].children[1].getWorldPosition(new T.Vector3()).toArray().map(function(v){return v.toFixed(2);}).join(",");
+  document.body.appendChild(d);
+},60);
+window.__cv={orb:orb,camera:camera,scene:scene,renderer:renderer,
+  stats:function(){return {calls:renderer.info.render.calls,tris:renderer.info.render.triangles};}};
+
+/* ══ 99. 跳转模式 ═══════════════════════════════════════
+   上轨道的入场：推镜 → 奶娃从画外走入 → 招手 → 鞠躬 → 跳南传。
+   时间轴是 t 的纯函数（没有积分状态），所以 ?jump&frame=3.2 能定点截图验收。 */
+var TARGET="https://www.cucn.edu.cn/";
+var jt={t:0,paused:false,fired:false};
+/* 相机：一段纯推轨，起终点视线只差约 4°，几乎没有摇镜头，像小摇臂下压。
+   P0/L0 直接抄自由漫游已验证过的 HOME 构图当远景。
+   为什么要明确摆 camera.position 而不走 orb：轨道控制器的阻尼会把精确机位吃掉。 */
+var P0=new T.Vector3(8.0,5.25,10.6), L0=new T.Vector3(0.0,3.7,-12.0);
+/* 终点机位压到接近平视（俯角 2.9°）。上一版俯角 9.5°、机位偏到 x=4，
+   结果校门整个被报到处帐篷挡掉、背景只剩展板和楼。
+   现在站在门洞轴线上、奶娃摆在门洞正前方 z=0.6，
+   这样它背后就是校门中柱 —— 匾额(≈15.1°)和红横幅(≈12.1°)刚好卡在画幅上沿内。 */
+var P1=new T.Vector3(0.0,2.05,10.4), L1=new T.Vector3(0.0,1.52,0.20);
+var _jp=new T.Vector3(), _jl=new T.Vector3();
+/* 角色站位：**z>0 的广场上没人**（人群游走范围是 z∈[-22,-2]，报到队列全部 z<=0.2）。
+   早期版本把奶娃摆在 (2.05,-5.4) —— 那是报到队伍正中间，
+   终点机位等于一头扎进人群，奶娃被裁掉一半、画面全是别人的后脑勺。 */
+var H0={x:-5.6,z:0.90,ry:1.57};        /* 画外左起点，面朝 +x 走 */
+var H1={x: 0.0,z:0.60,ry:.06};         /* 站位：门洞正前方，几乎正对机位 */
+var HY=hero.position.y;
+var DUR=reduce?2.6:7.0;
+
+function sstep(t,a,b){return Math.max(0,Math.min(1,(t-a)/(b-a)));}
+function sease(p){return 1-Math.pow(1-p,3);}
+
+function jumpCam(){
+  var p=reduce?1:sease(sstep(jt.t,0,2.2));
+  _jp.lerpVectors(P0,P1,p);_jl.lerpVectors(L0,L1,p);
+  camera.position.copy(_jp);camera.lookAt(_jl);
+}
+function jumpHero(){
+  var aR=hero.userData.armR,aL=hero.userData.armL;
+  if(reduce){                            /* 减弱动态：直接落在终态，不动 */
+    hero.position.x=H1.x;hero.position.z=H1.z;hero.rotation.y=H1.ry;
+    hero.rotation.x=0;aR.rotation.set(0,0,0);aL.rotation.set(0,0,0);
+    if(heroAO){heroAO.position.x=H1.x;heroAO.position.z=H1.z;}
+    return;
+  }
+  var w=sstep(jt.t,1.8,4.0),we=sease(w);
+  hero.position.x=H0.x+(H1.x-H0.x)*we;
+  hero.position.z=H0.z+(H1.z-H0.z)*we;
+  hero.rotation.y=H0.ry+(H1.ry-H0.ry)*we;
+  var walking=(w>0&&w<1);
+  hero.position.y=HY+(walking?Math.abs(Math.sin(jt.t*7.6))*.07:0);
+  if(heroAO){heroAO.position.x=hero.position.x;heroAO.position.z=hero.position.z;}
+
+  var sw=walking?Math.sin(jt.t*7.6):0;
+  aR.rotation.x=sw*.62;aL.rotation.x=-sw*.62;
+  aR.rotation.z=walking?-.12:0;aL.rotation.z=walking?.10:0;
+
+  var wv=sstep(jt.t,4.0,5.7);                 /* 招手 */
+  if(wv>0&&jt.t<6.0){
+    var k=sstep(jt.t,4.1,4.7);
+    aR.rotation.z=-1.05*k-Math.sin(jt.t*11.5)*.30*k;
+    aR.rotation.x=Math.sin(jt.t*11.5)*.22*k;
+    aL.rotation.z=.24*k;
+  }
+  var bw=sstep(jt.t,5.8,6.15);                /* 鞠躬 → 起 */
+  var bu=sstep(jt.t,6.15,6.55);
+  hero.rotation.x=(bw-bu)*.34;
+  if(jt.t>5.75){var sb=document.getElementById("sub");if(sb)sb.classList.add("on");}
+}
+
+function jumpFire(){
+  if(jt.fired)return;jt.fired=true;
+  location.replace(TARGET);
+  setTimeout(function(){location.href=TARGET;},900);   /* replace 被拦时的二道保险 */
+}
+
+/* 看门狗：11 秒内没出第一帧（着色器编译失败 / 显存不够 / 崩了）就回退 2D 版 */
+var FIRST=false;
+setTimeout(function(){ if(!FIRST)location.replace("index.html"); },
+           reduce?7000:11000);
+
+function jumpUI(){
+  var r=document.getElementById("ring");
+  if(r)r.setAttribute("stroke-dashoffset",String(144.5*(1-Math.max(0,Math.min(1,jt.t/DUR)))));
+  if(jt.t>=DUR&&!FREEZE)jumpFire();
+}
+
+/* 交互：轻点立即前往，长按暂停 */
+var FREEZE=(function(){var m=/[?&]frame=([-0-9.]+)/.exec(Q);return m?parseFloat(m[1]):null;})();
+if(JUMP){
+  canvas.style.cursor="pointer";
+  document.getElementById("go").addEventListener("click",function(e){
+    e.stopPropagation();jumpFire();});
+  var jpd=0,jhold=false,jmoved=0,jx=0,jy=0;
+  canvas.addEventListener("pointerdown",function(e){
+    jpd=performance.now();jhold=false;jmoved=0;jx=e.clientX;jy=e.clientY;});
+  canvas.addEventListener("pointermove",function(e){
+    if(!jpd)return;
+    jmoved=Math.max(jmoved,Math.abs(e.clientX-jx)+Math.abs(e.clientY-jy));
+    if(performance.now()-jpd>400&&jmoved<14){
+      jhold=true;jt.paused=true;
+      var h=document.getElementById("hold");if(h)h.classList.add("on");
+    }});
+  var jup=function(){
+    if(!jpd)return;
+    var held=performance.now()-jpd,wasHold=jhold;jpd=0;
+    if(wasHold){jt.paused=false;
+      var h=document.getElementById("hold");if(h)h.classList.remove("on");}
+    else if(held<400&&jmoved<14)jumpFire();      /* 轻点 = 立即前往 */
+  };
+  ["pointerup","pointercancel","pointerleave"].forEach(function(ev){
+    canvas.addEventListener(ev,jup);});
+  document.addEventListener("visibilitychange",function(){
+    if(document.hidden)jt.paused=true; else if(!jpd)jt.paused=false;});
+}
+
+/* 他本机 macOS 开着「减弱动态效果」，不加这行提示的话打开只会看到一张静止图 */
+if(reduce){
+  var _tp=document.getElementById("tip");
+  if(_tp)_tp.textContent="系统开着「减弱动态效果」，这里直接跳到终帧 · 加 ?motion=full 看完整动画";
+}
+
+function jumpTick(dt){
+  if(FREEZE!==null){jt.t=FREEZE;jumpCam();jumpUI();return;}
+  if(!jt.paused)jt.t+=dt;
+  jumpCam();jumpUI();
+}
+
+applyCam();if(JUMP)jumpTick(0);updateCrowd(0,0);renderer.render(scene,camera);
+requestAnimationFrame(function(){
+  load.classList.add("out");
+  setTimeout(function(){load.style.display="none";},800);
+});
+frame();
+})();
+</script>
+</body>
+</html>
