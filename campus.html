@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>中国奶娃大学 · 校门报到日</title>
+<meta name="description" content="可自由漫游的 3D 校门报到日场景。">
+<meta name="theme-color" content="#1B4B8D">
+<link rel="icon" href="favicon.ico" sizes="any">
+
+<style>
+  :root{ --blue:#1B4B8D; --ink:#16273F; --paper:#FFFDF6; --gold:#C9A227; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0E1A2B}
+  body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    color:#fff;-webkit-font-smoothing:antialiased}
+  #gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  #gl.drag{cursor:grabbing}
+
+  .bar{position:fixed;top:0;left:0;right:0;height:46px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 14px;z-index:5;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(8,16,28,.62),transparent)}
+  .bar b{font-size:13px;font-weight:600;letter-spacing:.22em;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .bar a{pointer-events:auto;font-size:12px;letter-spacing:.1em;color:#EAF1FA;
+    text-decoration:none;border:1px solid rgba(255,255,255,.34);border-radius:99px;
+    padding:6px 13px;background:rgba(10,22,38,.4);backdrop-filter:blur(6px);
+    transition:background .2s ease,border-color .2s ease}
+  .bar a:hover{background:rgba(27,75,141,.6);border-color:rgba(255,255,255,.6)}
+
+  .hud{position:fixed;left:0;right:0;bottom:0;padding:0 14px 16px;z-index:5;
+    display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
+  .tip{font-size:11.5px;letter-spacing:.16em;color:rgba(255,255,255,.72);
+    text-shadow:0 1px 6px rgba(0,0,0,.6);transition:opacity .6s ease}
+  .tip.hide{opacity:0}
+  .row{display:flex;gap:9px;pointer-events:auto}
+  .row button{font:inherit;font-size:12px;letter-spacing:.1em;color:#fff;cursor:pointer;
+    padding:8px 15px;border-radius:99px;border:1px solid rgba(255,255,255,.34);
+    background:rgba(10,22,38,.45);backdrop-filter:blur(6px);
+    transition:background .2s ease,transform .12s ease}
+  .row button:active{transform:translateY(1px) scale(.98)}
+  .row button:hover{background:rgba(27,75,141,.62)}
+  .row button.primary{background:var(--blue);border-color:transparent}
+
+  #load{position:fixed;inset:0;z-index:20;display:grid;place-items:center;
+    background:radial-gradient(120% 90% at 50% 0%, #17304F 0%, #0B1726 70%);
+    transition:opacity .7s ease}
+  #load.out{opacity:0;pointer-events:none}
+  #load div{text-align:center}
+  #load p{font-size:12px;letter-spacing:.3em;color:rgba(255,255,255,.6);margin-top:14px}
+  #load .sp{width:34px;height:34px;margin:0 auto;border-radius:50%;
+    border:2px solid rgba(255,255,255,.18);border-top-color:var(--gold);
+    animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #load.err p{letter-spacing:.05em;line-height:1.9;max-width:280px}
+
+  dialog{border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:24px;max-width:380px;
+    width:88vw;background:#12233A;color:#E8EFF8;font-size:13.5px;line-height:1.85}
+  dialog::backdrop{background:rgba(6,12,22,.66);backdrop-filter:blur(3px)}
+  dialog h2{font-size:15px;letter-spacing:.1em;margin-bottom:10px;color:#fff}
+  dialog p{color:rgba(232,239,248,.8)} dialog p+p{margin-top:8px}
+  dialog button{margin-top:16px;width:100%;font:inherit;font-size:13px;padding:9px;
+    border-radius:99px;border:1px solid rgba(255,255,255,.24);background:transparent;color:#fff;cursor:pointer}
+  dialog button:hover{background:rgba(255,255,255,.1)}
+</style>
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+
+<div class="bar"><b>中国奶娃大学 · 报到日</b><a href="index.html">← 返回护送页</a></div>
+
+<div class="hud">
+  <div class="row">
+    <button id="reset" type="button">回到正门</button>
+    <button id="about-btn" type="button">关于</button>
+    <a class="row" style="pointer-events:auto"></a>
+    <button id="go" class="primary" type="button">前往南传官网</button>
+  </div>
+  <p class="tip" id="tip">拖动旋转 · 滚轮或双指缩放</p>
+</div>
+
+<div id="load"><div><div class="sp"></div><p>正在搭校门</p></div></div>
+
+<dialog id="about">
+  <h2>关于本页</h2>
+  <p>整个场景是<b>现场程序化建模</b>的：校门、树、帐篷、奶娃本人，全部由基础几何体拼出来，
+     贴图也是运行时用 Canvas 画的，没有加载任何外部模型文件。</p>
+  <p>本站与南京传媒学院无任何官方关联，「中国奶娃大学」是虚构校名，仅作趣味用途。</p>
+  <button id="close" type="button">知道了</button>
+</dialog>
+
+<script src="vendor/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+var canvas=document.getElementById("gl"), load=document.getElementById("load");
+
+/* ── 无 WebGL 时的兜底：不让人卡在黑屏 ───────────────── */
+var probe=null;
+try{ probe=canvas.getContext("webgl2")||canvas.getContext("webgl"); }catch(e){}
+if(!window.THREE||!probe){
+  load.className="err";
+  load.innerHTML='<div><p>这台设备没开 WebGL，3D 场景起不来。<br>'
+    +'<a href="index.html" style="color:#C9A227">← 回到护送页（2D 版）</a></p></div>';
+  return;
+}
+
+var reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+var T=window.THREE;
+
+/* ── 渲染器：ACES 色调映射 + 软阴影，质感全靠这两样 ───── */
+var renderer=new T.WebGLRenderer({canvas:canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.setSize(innerWidth,innerHeight,false);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=T.PCFSoftShadowMap;
+renderer.outputEncoding=T.sRGBEncoding;
+renderer.toneMapping=T.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.06;
+
+var scene=new T.Scene();
+scene.background=new T.Color(0xBFD7EE);
+scene.fog=new T.Fog(0xC6DAEE,46,168);          /* 远景雾化 = 空气透视 */
+
+var camera=new T.PerspectiveCamera(42,innerWidth/innerHeight,0.4,420);
+
+/* ── 程序化贴图工具：先用 Canvas 画，再当纹理 ─────────── */
+function cvs(w,h){var c=document.createElement("canvas");c.width=w;c.height=h;return c;}
+function tex(c,rep){
+  var t=new T.CanvasTexture(c);
+  t.encoding=T.sRGBEncoding;
+  t.anisotropy=4;
+  if(rep){t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rep[0],rep[1]);}
+  return t;
+}
+function rr(g,x,y,w,h,r){                      /* 圆角矩形 */
+  g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();
+}
+
+function grassTex(){
+  var c=cvs(1024,1024),g=c.getContext("2d");
+  g.fillStyle="#5C7A44";g.fillRect(0,0,1024,1024);
+  for(var i=0;i<26000;i++){                    /* 草的颗粒噪声 */
+    var v=Math.random();
+    g.fillStyle=v<.5?"rgba(74,104,56,.55)":"rgba(120,146,88,.45)";
+    g.fillRect(Math.random()*1024,Math.random()*1024,2,2);
+  }
+  return tex(c,[6,6]);
+}
+function paveTex(){
+  var c=cvs(256,256),g=c.getContext("2d");
+  g.fillStyle="#9A9791";g.fillRect(0,0,256,256);
+  for(var i=0;i<5200;i++){
+    g.fillStyle=Math.random()<.5?"rgba(120,118,112,.5)":"rgba(190,188,182,.45)";
+    g.fillRect(Math.random()*256,Math.random()*256,2,2);
+  }
+  g.strokeStyle="rgba(70,68,64,.35)";g.lineWidth=2;
+  for(var y=0;y<=256;y+=64){g.beginPath();g.moveTo(0,y);g.lineTo(256,y);g.stroke();}
+  for(var x=0;x<=256;x+=128){g.beginPath();g.moveTo(x,0);g.lineTo(x,256);g.stroke();}
+  return tex(c,[2,26]);
+}
+/* 校名匾额 */
+function plaqueTex(text,bg,fg,w,h,size){
+  var c=cvs(w,h),g=c.getContext("2d");
+  g.fillStyle=bg;g.fillRect(0,0,w,h);
+  g.strokeStyle="rgba(255,255,255,.34)";g.lineWidth=Math.max(3,h*.045);
+  g.strokeRect(g.lineWidth/2,g.lineWidth/2,w-g.lineWidth,h-g.lineWidth);
+  g.fillStyle=fg;g.textAlign="center";g.textBaseline="middle";
+  g.font="700 "+size+'px "Songti SC","PingFang SC",serif';
+  var sp=size*.16, tot=0, i;
+  for(i=0;i<text.length;i++) tot+=size+sp;
+  var x=(w-tot)/2+size/2;
+  for(i=0;i<text.length;i++){g.fillText(text.charAt(i),x,h/2+2);x+=size+sp;}
+  return tex(c);
+}
+/* 教学楼窗格 */
+function facadeTex(){
+  var c=cvs(512,512),g=c.getContext("2d");
+  g.fillStyle="#7E8896";g.fillRect(0,0,512,512);
+  for(var y=18;y<512;y+=52)for(var x=18;x<512;x+=52){
+    var lit=Math.random()<.28;
+    g.fillStyle=lit?"rgba(255,226,150,.92)":"rgba(38,58,84,.85)";
+    rr(g,x,y,32,34,3);g.fill();
+  }
+  return tex(c,[2,3]);
+}
+/* 帐篷侧面的报到指示牌 */
+function bannerTex(){
+  var c=cvs(256,384),g=c.getContext("2d");
+  g.fillStyle="#F7F3E8";g.fillRect(0,0,256,384);
+  g.fillStyle="#1B4B8D";g.fillRect(0,0,256,74);
+  g.fillStyle="#fff";g.textAlign="center";g.font='700 34px "PingFang SC",sans-serif';
+  g.fillText("报 到 处",128,50);
+  g.fillStyle="#1B4B8D";g.font='26px "PingFang SC",sans-serif';
+  ["数字媒体学院","计算机与人工智能","动画学院","播音与主持"].forEach(function(s,i){
+    g.fillText(s,128,132+i*52);
+  });
+  g.strokeStyle="rgba(27,75,141,.3)";g.lineWidth=4;g.strokeRect(2,2,252,380);
+  return tex(c);
+}
+/* 树叶精灵 */
+function leafTex(){
+  var c=cvs(64,64),g=c.getContext("2d");
+  g.clearRect(0,0,64,64);
+  g.fillStyle="#D8A03A";
+  g.beginPath();g.ellipse(32,32,20,11,-.5,0,7);g.fill();
+  g.strokeStyle="rgba(120,80,20,.6)";g.lineWidth=2;
+  g.beginPath();g.moveTo(14,40);g.lineTo(50,24);g.stroke();
+  return tex(c);
+}
+/* 天空渐变 */
+function skyTex(){
+  var c=cvs(8,512),g=c.getContext("2d");
+  var lin=g.createLinearGradient(0,0,0,512);
+  lin.addColorStop(0,"#5E8FC4");lin.addColorStop(.42,"#A8CBE8");
+  lin.addColorStop(.62,"#DCEAF3");lin.addColorStop(1,"#F2E6CE");
+  g.fillStyle=lin;g.fillRect(0,0,8,512);
+  return tex(c);
+}
+
+/* ── 材质库 ───────────────────────────────────────── */
+var M={
+  stone : new T.MeshStandardMaterial({color:0xE8E2D2,roughness:.86,metalness:.02}),
+  stoneD: new T.MeshStandardMaterial({color:0xCFC7B2,roughness:.9}),
+  roof  : new T.MeshStandardMaterial({color:0x2E4C74,roughness:.62}),
+  gold  : new T.MeshStandardMaterial({color:0xC9A227,roughness:.34,metalness:.55}),
+  trunk : new T.MeshStandardMaterial({color:0x5A4632,roughness:.95}),
+  leafA : new T.MeshStandardMaterial({color:0x33582A,roughness:.92}),
+  leafB : new T.MeshStandardMaterial({color:0x47702F,roughness:.92}),
+  canvasW:new T.MeshStandardMaterial({color:0xF2EDE1,roughness:.78,side:T.DoubleSide}),
+  tentR : new T.MeshStandardMaterial({color:0x74201B,roughness:.78}),
+  tentB : new T.MeshStandardMaterial({color:0x1B4B8D,roughness:.72}),
+  pole  : new T.MeshStandardMaterial({color:0xB9BCC0,roughness:.5,metalness:.35}),
+  table : new T.MeshStandardMaterial({color:0x8A6A46,roughness:.8}),
+  body  : new T.MeshStandardMaterial({color:0xE8B62C,roughness:.55}),
+  belly : new T.MeshStandardMaterial({color:0xEEDCB4,roughness:.62}),
+  dark  : new T.MeshStandardMaterial({color:0x5E5340,roughness:.7}),
+  eyeW  : new T.MeshStandardMaterial({color:0x9FD8A8,roughness:.35}),
+  eyeB  : new T.MeshStandardMaterial({color:0x14181C,roughness:.22}),
+  mouth : new T.MeshStandardMaterial({color:0x6B5A2C,roughness:.7})
+};
+
+function mesh(geo,mat,x,y,z){
+  var m=new T.Mesh(geo,mat);
+  m.position.set(x||0,y||0,z||0);
+  m.castShadow=true;m.receiveShadow=true;
+  return m;
+}
+
+/* ── 地面：草地 + 独立中轴步道 ─────────────────────── */
+var ground=mesh(new T.PlaneGeometry(300,300),
+  new T.MeshStandardMaterial({map:grassTex(),roughness:.96}),0,0,0);
+ground.rotation.x=-Math.PI/2;ground.castShadow=false;
+scene.add(ground);
+/* 步道从镜头前一直铺到校门后 */
+var walk=mesh(new T.PlaneGeometry(5.2,74),
+  new T.MeshStandardMaterial({map:paveTex(),roughness:.9}),0,.02,6);
+walk.rotation.x=-Math.PI/2;walk.castShadow=false;
+scene.add(walk);
+/* 门前广场 */
+var plaza=mesh(new T.PlaneGeometry(20,13),
+  new T.MeshStandardMaterial({map:paveTex(),roughness:.9}),0,.021,-19.5);
+plaza.rotation.x=-Math.PI/2;plaza.castShadow=false;
+scene.add(plaza);
+
+/* 天空穹顶 */
+var sky=new T.Mesh(new T.SphereGeometry(200,24,16),
+  new T.MeshBasicMaterial({map:skyTex(),side:T.BackSide,fog:false}));
+scene.add(sky);
+
+/* ── 牌坊校门：四柱三间 + 匾额 + 两侧矮墙 ─────────────── */
+var gate=new T.Group(); gate.position.set(0,0,-14); scene.add(gate);
+
+function pillar(x,h,r){
+  var g=new T.Group();
+  g.add(mesh(new T.BoxGeometry(1.5,h,1.5),M.stone,0,h/2,0));
+  g.add(mesh(new T.BoxGeometry(1.9,.34,1.9),M.stoneD,0,.17,0));       /* 柱础 */
+  g.add(mesh(new T.BoxGeometry(1.86,.3,1.86),M.stoneD,0,h+.15,0));    /* 柱帽 */
+  g.add(mesh(new T.CylinderGeometry(r,r,r*1.5,14),M.gold,0,h+r*.75,0));
+  g.position.x=x; return g;
+}
+gate.add(pillar(-6.4,7.2,.42)); gate.add(pillar(6.4,7.2,.42));
+gate.add(pillar(-3.1,8.6,.5));  gate.add(pillar(3.1,8.6,.5));
+
+/* 三重檐横梁：中间最高 */
+function beam(w,h,y,depth){
+  var g=new T.Group();
+  g.add(mesh(new T.BoxGeometry(w,h,depth||1.15),M.stone,0,y,0));
+  g.add(mesh(new T.BoxGeometry(w+.5,.26,depth?depth+.42:1.55),M.roof,0,y+h/2+.13,0));
+  return g;
+}
+gate.add(beam(7.0,1.0,7.5));
+gate.add(beam(3.4,.72,6.1,1.0));                    /* 次间 */
+var side1=beam(3.4,.72,6.1,1.0); side1.position.x=-5.0; gate.add(side1);
+var side2=beam(3.4,.72,6.1,1.0); side2.position.x= 5.0; gate.add(side2);
+
+/* 主匾额 + 校名 */
+var plaque=mesh(new T.BoxGeometry(4.4,1.42,.22),M.stoneD,0,7.55,.62);
+gate.add(plaque);
+var sign=new T.Mesh(new T.PlaneGeometry(4.1,1.12),
+  new T.MeshBasicMaterial({map:plaqueTex("中国奶娃大学","#1B4B8D","#F5EFDF",1024,288,168)}));
+sign.position.set(0,7.55,.74); gate.add(sign);
+var signBack=sign.clone(); signBack.rotation.y=Math.PI;
+signBack.position.set(0,7.55,.5); gate.add(signBack);
+
+/* 次匾 */
+[[-5.0,"奶院"],[5.0,"娃院"]].forEach(function(o){
+  var s=new T.Mesh(new T.PlaneGeometry(2.5,.62),
+    new T.MeshBasicMaterial({map:plaqueTex(o[1],"#2E4C74","#EFE6CE",512,128,72)}));
+  s.position.set(o[0],6.2,.62); gate.add(s);
+});
+
+/* 两侧延伸矮墙 + 立柱 */
+[-1,1].forEach(function(s){
+  for(var i=0;i<5;i++){
+    var x=s*(8.2+i*2.3);
+    gate.add(mesh(new T.BoxGeometry(2.1,1.5,.7),M.stone,x,.75,0));
+    gate.add(mesh(new T.BoxGeometry(.42,.42,.86),M.stoneD,x,1.62,0));
+    gate.add(mesh(new T.SphereGeometry(.24,12,10),M.stone,x,1.9,0));
+  }
+});
+
+/* ── 林荫道：两侧各 7 棵，纵深透视 ───────────────────── */
+var trunkGeo=new T.CylinderGeometry(.17,.26,2.6,8);
+var crownGeo=new T.SphereGeometry(1,12,10);
+function tree(x,z,s){
+  var g=new T.Group();
+  g.add(mesh(trunkGeo,M.trunk,0,1.3*s,0));
+  var blobs=[[0,3.0,0,1.15],[.55,2.6,.3,.85],[-.5,2.7,-.35,.9],[0,3.6,.1,.78]];
+  blobs.forEach(function(b,i){
+    var m=mesh(crownGeo,i%2?M.leafA:M.leafB,b[0]*s,b[1]*s,b[2]*s);
+    m.scale.set(b[3]*s,b[3]*s*.92,b[3]*s);
+    g.add(m);
+  });
+  g.position.set(x,0,z); g.scale.setScalar(s); return g;
+}
+for(var i=0;i<7;i++){
+  var z=-10-i*5.4, s=.92+Math.random()*.34;
+  scene.add(tree(-6.6,z,s)); scene.add(tree(6.6,z-.8,s*.96));
+}
+/* 门前两棵对称大树 */
+scene.add(tree(-9.4,-13.4,1.35)); scene.add(tree(9.4,-13.4,1.3));
+
+/* ── 报到大帐篷：沿步道三顶 ─────────────────────────── */
+var banner=bannerTex();
+function tent(x,z,mat){
+  var g=new T.Group();
+  g.add(mesh(new T.ConeGeometry(2.5,1.5,4),mat,0,2.55,0));
+  g.children[0].rotation.y=Math.PI/4;
+  g.add(mesh(new T.BoxGeometry(4.5,.16,4.5),mat,0,1.78,0));
+  [[-1.9,-1.9],[1.9,-1.9],[-1.9,1.9],[1.9,1.9]].forEach(function(p){
+    g.add(mesh(new T.CylinderGeometry(.07,.07,1.8,7),M.pole,p[0],.9,p[1]));
+  });
+  var t=mesh(new T.BoxGeometry(2.1,.12,.9),M.table,-.1,1.0,.2); g.add(t);
+  g.add(mesh(new T.BoxGeometry(.1,.55,.1),M.pole,-1.0,.72,.2));
+  g.add(mesh(new T.BoxGeometry(.1,.55,.1),M.pole,1.0,.72,.2));
+  var b=new T.Mesh(new T.PlaneGeometry(1.05,1.6),
+    new T.MeshBasicMaterial({map:banner,side:T.DoubleSide}));
+  b.position.set(2.35,.95,0); b.rotation.y=-Math.PI/2; g.add(b);
+  g.position.set(x,0,z); return g;
+}
+scene.add(tent(-4.6,-3.2,M.tentR));
+scene.add(tent( 4.8,-6.4,M.tentB));
+scene.add(tent(-5.0,-9.6,M.tentB));
+
+/* ── 远景教学楼 ────────────────────────────────────── */
+var facade=facadeTex();
+function block(w,h,d,x,z,ry){
+  var wall=new T.MeshStandardMaterial({map:facade,roughness:.82,color:0xB9C2CC});
+  var plain=new T.MeshStandardMaterial({color:0x9AA6B4,roughness:.88});
+  var roof=new T.MeshStandardMaterial({color:0x6E7A88,roughness:.9});
+  var mats=[wall,wall,roof,plain,wall,wall];
+  var b=mesh(new T.BoxGeometry(w,h,d),mats,x,h/2,z);
+  b.rotation.y=ry||0; b.castShadow=false; return b;
+}
+scene.add(block(26,13,9,-24,-38,.2));
+scene.add(block(20,17,8, 26,-42,-.18));
+scene.add(block(30,10,8,  2,-58,0));
+scene.add(block(16,21,7, 40,-24,.5));
+scene.add(block(14,9,20,-42,-16,-.3));
+
+/* ── 奶娃：LatheGeometry 转一个瓶状身体（宽 0.96 / 高 1.28，比宽更高）── */
+var hero=new T.Group();
+(function(){
+  var EYES=[];
+  var prof=[[0,.26],[.05,.37],[.17,.48],[.33,.53],[.50,.48],[.62,.38],
+            [.72,.30],[.82,.30],[.92,.33],[1.02,.32],[1.12,.26],[1.21,.15],[1.28,0]]
+            .map(function(q){return new T.Vector2(q[1],q[0]);});
+  var body=new T.Mesh(new T.LatheGeometry(prof,40),M.body);
+  body.castShadow=body.receiveShadow=true;
+  hero.add(body);
+  /* 肚皮：同轮廓下半段取一小片扇形，半径微外扩 */
+  var bellyProf=prof.slice(0,6).map(function(v){return new T.Vector2(v.x*1.015,v.y);});
+  var belly=new T.Mesh(new T.LatheGeometry(bellyProf,22,-.58,1.16),M.belly);
+  belly.rotation.y=Math.PI/2; belly.receiveShadow=true; hero.add(belly);
+  /* 眼睛 + 瞳孔 */
+  [-1,1].forEach(function(sd){
+    var e=mesh(new T.SphereGeometry(.062,14,12),M.eyeW,.084*sd,1.14,.168);
+    e.userData.r=.062; EYES.push(e);
+    var pu=mesh(new T.SphereGeometry(.036,12,10),M.eyeB,.084*sd,1.14,.203);
+    pu.userData.r=.036; EYES.push(pu);
+    pu.scale.set(1,1,.6);
+  });
+  /* 嘴 */
+  var mo=mesh(new T.SphereGeometry(.04,10,8),M.mouth,0,1.055,.196);
+  mo.scale.set(1.6,.2,.5); hero.add(mo);
+  /* 脚 */
+  [-1,1].forEach(function(sd){
+    var f=mesh(new T.SphereGeometry(.13,12,10),M.dark,.15*sd,.055,.05);
+    f.scale.set(.85,.48,1.3); hero.add(f);
+  });
+  /* 左手抱腹 */
+  var armL=new T.Group();
+  armL.add(mesh(new T.CapsuleGeometry(.062,.34,4,10),M.body,0,-.17,0));
+  armL.add(mesh(new T.SphereGeometry(.095,12,10),M.dark,0,-.36,.02));
+  armL.position.set(-.24,.66,.13); armL.rotation.set(.55,0,.95); hero.add(armL);
+  /* 右手会挥 */
+  var armR=new T.Group();
+  armR.add(mesh(new T.CapsuleGeometry(.062,.36,4,10),M.body,0,.18,0));
+  armR.add(mesh(new T.SphereGeometry(.098,12,10),M.dark,0,.39,0));
+  armR.position.set(.26,.68,.11); armR.rotation.z=-1.15; hero.add(armR);
+  hero.userData={armR:armR, armL:armL, body:body, eyes:EYES};
+})();
+hero.scale.setScalar(2.0);
+hero.position.set(1.7,0,-5.2);
+hero.rotation.y=-.30;
+scene.add(hero);
+
+/* ── 飘落树叶粒子 ─────────────────────────────────── */
+var LEAVES=reduce?0:70, leafPos=new Float32Array(LEAVES*3), leafSeed=[];
+for(var i=0;i<LEAVES;i++){
+  leafPos[i*3]=(Math.random()-.5)*30;
+  leafPos[i*3+1]=Math.random()*13+1;
+  leafPos[i*3+2]=-32+Math.random()*30;
+  leafSeed.push({sp:.34+Math.random()*.5, ph:Math.random()*6.28, amp:.5+Math.random()});
+}
+var leafGeo=new T.BufferGeometry();
+leafGeo.setAttribute("position",new T.BufferAttribute(leafPos,3));
+var leaves=new T.Points(leafGeo,new T.PointsMaterial({
+  map:leafTex(),size:.36,transparent:true,depthWrite:false,opacity:.95,
+  sizeAttenuation:true,color:0xffffff}));
+scene.add(leaves);
+
+/* ── 打光：五灯混打，氛围全靠它 ─────────────────────── */
+scene.add(new T.HemisphereLight(0xBFD8F2,0x41502F,0.42));
+
+var sun=new T.DirectionalLight(0xFFEBCB,1.62);
+sun.position.set(16,22,-6); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-34; sun.shadow.camera.right=34;
+sun.shadow.camera.top=34;   sun.shadow.camera.bottom=-34;
+sun.shadow.camera.near=1;   sun.shadow.camera.far=90;
+sun.shadow.bias=-.0007; sun.shadow.normalBias=.02;
+scene.add(sun); scene.add(sun.target);
+
+/* 校门两盏射灯打亮匾额 */
+[-1,1].forEach(function(s){
+  var sp=new T.SpotLight(0xFFDFA4,2.6,26,T.MathUtils.degToRad(20),.6,1.5);
+  sp.position.set(s*4.2,1.1,-12.4);
+  sp.target.position.set(s*1.2,7.6,-14);
+  scene.add(sp); scene.add(sp.target);
+});
+/* 帐篷里一盏暖光 */
+var warm=new T.PointLight(0xFFC070,2.2,10,2);
+warm.position.set(-4.6,1.6,-3.2); scene.add(warm);
+
+/* ── 自写轨道控制器：阻尼 + 惯性 + 俯仰限制 ──────────── */
+var orb={
+  theta:.16, phi:1.44, r:21,
+  tTheta:.16, tPhi:1.44, tR:21,
+  vTheta:0, vPhi:0,
+  target:new T.Vector3(0,3.1,-13),
+  minPhi:.30, maxPhi:1.53, minR:6, maxR:70
+};
+function applyCam(){
+  var sp=Math.sin(orb.phi);
+  camera.position.set(
+    orb.target.x + orb.r*sp*Math.sin(orb.theta),
+    orb.target.y + orb.r*Math.cos(orb.phi),
+    orb.target.z + orb.r*sp*Math.cos(orb.theta));
+  camera.lookAt(orb.target);
+}
+var ptrs=new Map(), dragging=false, lastX=0, lastY=0, pinch=0, moved=0;
+
+canvas.addEventListener("pointerdown",function(e){
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===1){dragging=true;lastX=e.clientX;lastY=e.clientY;moved=0;canvas.classList.add("drag");}
+  if(ptrs.size===2){var a=[...ptrs.values()];pinch=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);}
+  canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);
+  hideTip();
+});
+canvas.addEventListener("pointermove",function(e){
+  if(!ptrs.has(e.pointerId))return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===2){
+    var a=[...ptrs.values()], d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+    if(pinch) orb.tR=T.MathUtils.clamp(orb.tR*(pinch/d),orb.minR,orb.maxR);
+    pinch=d; return;
+  }
+  if(!dragging)return;
+  var dx=e.clientX-lastX, dy=e.clientY-lastY;
+  lastX=e.clientX; lastY=e.clientY;
+  moved+=Math.abs(dx)+Math.abs(dy);
+  orb.tTheta-=dx*.0052;
+  orb.tPhi=T.MathUtils.clamp(orb.tPhi-dy*.0042,orb.minPhi,orb.maxPhi);
+  orb.vTheta=-dx*.0052;
+});
+function endPtr(e){
+  ptrs.delete(e.pointerId);
+  if(ptrs.size<2) pinch=0;
+  if(ptrs.size===0){dragging=false;canvas.classList.remove("drag");}
+}
+["pointerup","pointercancel","pointerleave"].forEach(function(ev){
+  canvas.addEventListener(ev,endPtr);
+});
+canvas.addEventListener("wheel",function(e){
+  e.preventDefault();
+  orb.tR=T.MathUtils.clamp(orb.tR*(1+Math.sign(e.deltaY)*.09),orb.minR,orb.maxR);
+  hideTip();
+},{passive:false});
+
+/* ── 入场推镜：2.6s 从远处推到正门，然后交还控制权 ────── */
+var intro={t:0, dur:reduce?0:2.6, on:!reduce};
+orb.r=orb.tR=46; orb.phi=orb.tPhi=.92; orb.theta=orb.tTheta=-.52;
+
+/* ── 主循环 ───────────────────────────────────────── */
+var clock=new T.Clock(), tipHidden=false;
+function hideTip(){ if(tipHidden)return; tipHidden=true;
+  var t=document.getElementById("tip"); if(t) t.classList.add("hide"); }
+
+function frame(){
+  var dt=Math.min(clock.getDelta(),.05), el=clock.elapsedTime;
+
+  if(intro.on){
+    intro.t+=dt;
+    var p=Math.min(intro.t/intro.dur,1);
+    var e=1-Math.pow(1-p,3);
+    orb.tR=46+(21-46)*e; orb.tPhi=.92+(1.44-.92)*e; orb.tTheta=-.52+(.16+.52)*e;
+    if(p>=1) intro.on=false;
+  }
+
+  /* 惯性 + 阻尼 */
+  if(!dragging){ orb.tTheta+=orb.vTheta; orb.vTheta*=.90; if(Math.abs(orb.vTheta)<1e-5)orb.vTheta=0; }
+  orb.theta+=(orb.tTheta-orb.theta)*Math.min(1,dt*9);
+  orb.phi  +=(orb.tPhi  -orb.phi  )*Math.min(1,dt*9);
+  orb.r    +=(orb.tR    -orb.r    )*Math.min(1,dt*6.5);
+  applyCam();
+
+  /* 奶娃：呼吸 + 眨眼 + 挥手 */
+  var u=hero.userData, br=Math.sin(el*2.4);
+  var HS=2.0;
+  hero.scale.set(HS*(1-br*.006),HS*(1+br*.014),HS*(1-br*.006));
+  var wave = el>intro.dur+.4 ? Math.abs(Math.sin((el-intro.dur)*1.5)) : 0;
+  var amp = intro.on ? 0 : 1;
+  u.armR.rotation.z=-1.15-Math.sin(el*4.6)*.30*amp;
+  u.armR.rotation.x=Math.sin(el*2.3)*.12*amp;
+  var blink=(el%3.4)>3.22?.14:1;
+  if(u.eyes) u.eyes.forEach(function(e){ e.scale.y=e.userData.r*blink; });
+
+  /* 落叶 */
+  if(LEAVES){
+    var arr=leafGeo.attributes.position.array;
+    for(var i2=0;i2<LEAVES;i2++){
+      var s2=leafSeed[i2];
+      arr[i2*3+1]-=s2.sp*dt;
+      arr[i2*3]+=Math.sin(el*.9+s2.ph)*s2.amp*dt*.7;
+      if(arr[i2*3+1]<.2){
+        arr[i2*3+1]=11+Math.random()*5;
+        arr[i2*3]=(Math.random()-.5)*30;
+        arr[i2*3+2]=-32+Math.random()*30;
+      }
+    }
+    leafGeo.attributes.position.needsUpdate=true;
+  }
+
+  sun.intensity=1.62+Math.sin(el*.5)*.05;      /* 云层轻微明暗起伏 */
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+
+/* ── 尺寸变化 ─────────────────────────────────────── */
+addEventListener("resize",function(){
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight,false);
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+});
+
+/* ── UI ──────────────────────────────────────────── */
+document.getElementById("reset").addEventListener("click",function(){
+  orb.tTheta=.20; orb.tPhi=1.30; orb.tR=27; orb.vTheta=0;
+});
+document.getElementById("go").addEventListener("click",function(){
+  location.href="https://www.cucn.edu.cn/";
+});
+var dlg=document.getElementById("about");
+document.getElementById("about-btn").addEventListener("click",function(){dlg.showModal();});
+document.getElementById("close").addEventListener("click",function(){dlg.close();});
+dlg.addEventListener("click",function(e){if(e.target===dlg)dlg.close();});
+
+/* 仅 ?debug 时暴露调试钩子，供无头截图摆机位；正常访问不产生全局变量 */
+if(location.search.indexOf("debug")>=0)
+  window.__campus={orb:orb,camera:camera,renderer:renderer,
+    set:function(th,phi,r,ty){intro.on=false;orb.theta=orb.tTheta=th;
+      orb.phi=orb.tPhi=phi;orb.r=orb.tR=r;orb.target.y=ty;applyCam();}};
+
+/* 先渲染一帧再撤下 loading，避免闪白 */
+applyCam(); renderer.render(scene,camera);
+requestAnimationFrame(function(){
+  load.classList.add("out");
+  setTimeout(function(){load.style.display="none";},800);
+});
+frame();
+})();
+</script>
+</body>
+</html>
