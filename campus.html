@@ -21,7 +21,7 @@
   .bar b{font-size:13px;font-weight:600;letter-spacing:.22em;text-shadow:0 1px 6px rgba(0,0,0,.55)}
   .bar a{pointer-events:auto;font-size:12px;letter-spacing:.1em;color:#EAF1FA;text-decoration:none;
     border:1px solid rgba(255,255,255,.32);border-radius:99px;padding:6px 13px;
-    background:rgba(10,22,38,.4);backdrop-filter:blur(6px);transition:background .2s,border-color .2s}
+    background:rgba(10,22,38,.62);transition:background .2s,border-color .2s}
   .bar a:hover{background:rgba(27,75,141,.6);border-color:rgba(255,255,255,.6)}
   .hud{position:fixed;left:0;right:0;bottom:0;padding:0 14px 16px;z-index:5;display:flex;
     flex-direction:column;align-items:center;gap:10px;pointer-events:none}
@@ -31,7 +31,7 @@
   .row{display:flex;gap:9px;pointer-events:auto;flex-wrap:wrap;justify-content:center}
   .row button{font:inherit;font-size:12px;letter-spacing:.1em;color:#fff;cursor:pointer;
     padding:8px 15px;border-radius:99px;border:1px solid rgba(255,255,255,.3);
-    background:rgba(10,22,38,.42);backdrop-filter:blur(6px);
+    background:rgba(10,22,38,.66);
     transition:background .2s,transform .12s}
   .row button:active{transform:translateY(1px) scale(.98)}
   .row button:hover{background:rgba(27,75,141,.6)}
@@ -46,7 +46,7 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   dialog{border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:24px;max-width:380px;width:88vw;
     background:#12233A;color:#E8EFF8;font-size:13.5px;line-height:1.85}
-  dialog::backdrop{background:rgba(6,12,22,.66);backdrop-filter:blur(3px)}
+  dialog::backdrop{background:rgba(6,12,22,.72)}
   dialog h2{font-size:15px;letter-spacing:.1em;margin-bottom:10px}
   dialog p{color:rgba(232,239,248,.8)} dialog p+p{margin-top:8px}
   dialog button{margin-top:16px;width:100%;font:inherit;font-size:13px;padding:9px;border-radius:99px;
@@ -242,6 +242,16 @@ function ao(size,opacity,x,y,z,ry){
   m.scale.set(size,size,1);m.position.set(x||0,y,z||0);m.renderOrder=1;
   m.raycast=function(){};return m;
 }
+function bellyTex(){
+  var S=256,c=cvs(S,S),g=c.getContext("2d");
+  var rg=g.createRadialGradient(S/2,S*.52,0,S/2,S*.52,S*.50);
+  rg.addColorStop(0,"rgba(226,214,180,1)");rg.addColorStop(.52,"rgba(226,214,180,1)");
+  rg.addColorStop(.78,"rgba(226,214,180,.58)");rg.addColorStop(.93,"rgba(226,214,180,.18)");
+  rg.addColorStop(1,"rgba(226,214,180,0)");
+  g.save();g.translate(S/2,S*.52);g.scale(.80,1.06);g.translate(-S/2,-S*.52);
+  g.fillStyle=rg;g.fillRect(0,0,S,S);g.restore();
+  return tex(c);
+}
 function plaqueTex(text,bg,fg,w,h,size){
   var c=cvs(w,h),g=c.getContext("2d");
   g.fillStyle=bg;g.fillRect(0,0,w,h);
@@ -395,16 +405,16 @@ var M={
   tentR : std({normalMap:sm.normal,roughnessMap:cr,color:0x8E2018,roughness:1,envMapIntensity:.42}),
   tentB : std({normalMap:sm.normal,roughnessMap:cr,color:0x17427E,roughness:1,envMapIntensity:.42}),
   cloth : std({color:0xF2EDE1,roughness:.92,side:T.DoubleSide,envMapIntensity:.6}),
-  pole  : std({color:0x6E737A,roughness:.38,metalness:.82,envMapIntensity:1.0}),
+  pole  : std({color:0x4E5359,roughness:.52,metalness:.45,envMapIntensity:.65}),
   table : std({normalMap:sm.normal,color:0x8A6A46,roughness:.88,envMapIntensity:.6}),
   bulb  : std({color:0x221C10,emissive:0xFFD9A0,emissiveIntensity:5,roughness:.4}),
-  hero  : std({normalMap:sm.normal,color:0xEFBE33,roughness:.6,metalness:0,envMapIntensity:.85}),
-  belly : std({color:0xF0DFB8,roughness:.7,envMapIntensity:.75}),
-  dark  : std({color:0x5A5040,roughness:.78,envMapIntensity:.6}),
-  eyeW  : std({color:0x9FD8A8,roughness:.2,envMapIntensity:1.15}),
-  eyeB  : std({color:0x101418,roughness:.14,envMapIntensity:1.2}),
-  gloss : std({color:0xFFFFFF,roughness:.12,metalness:.05,envMapIntensity:1.5}),
-  mouth : std({color:0x6B5A2C,roughness:.72})
+  hero  : std({color:0xB48420,roughness:.54,metalness:0,envMapIntensity:.34}),
+  belly : std({color:0xA89468,roughness:.58,envMapIntensity:.34}),
+  dark  : std({color:0x453D2C,roughness:.62,metalness:0,envMapIntensity:.42}),
+  eyeW  : std({color:0x7FA86A,roughness:.28,metalness:0,envMapIntensity:.75}),
+  eyeB  : std({color:0x0D100D,roughness:.16,metalness:0,envMapIntensity:.9}),
+  gloss : std({color:0xFFFFFF,roughness:.10,metalness:0,envMapIntensity:1.4}),
+  mouth : std({color:0x4C4331,roughness:.66})
 };
 
 
@@ -432,6 +442,7 @@ function grime(mat,baseY,span,strength){
 grime(M.stone ,.30,7.5,.42);
 grime(M.stoneD,.10,6.0,.46);
 grime(M.stoneB,.00,3.2,.30);
+grime(M.hero ,.35,1.9,.20);
 /* ══ 4. 倒角几何：轮廓质感全靠边缘高光 ══════════════════ */
 function roundRect(w,h,r){
   var s=new T.Shape(),x=-w/2,y=-h/2;r=Math.min(r,w/2,h/2);
@@ -901,7 +912,6 @@ function block(w,h,d,x,z,ry){
   g.add(box(rw,1.9,rd,M.wallT,-w*.18,h*.86+2.7,0));
   for(var i=0;i<3;i++)                                        /* 空调外机 */
     g.add(box(.9,.5,.7,M.wallP,w*.12+i*1.4,h*.86+2.0,d*.18));
-  g.add(ao(Math.max(w,d)*1.9,.30,0,.06,0));
   g.position.set(x,0,z);g.rotation.y=ry||0;scene.add(g);return g;
 }
 block(26,17,9,-33,-62,.20);block(19,34,8,36,-66,-.18);block(34,11,9,2,-86,0);
@@ -909,69 +919,164 @@ block(15,44,7,55,-58,.46);block(16,12,22,-57,-54,-.30);block(23,21,8,-18,-76,.09
 block(14,29,8,25,-56,-.12);block(28,15,9,66,-82,.28);
 block(24,24,9,-66,-74,-.22);block(30,12,10,-4,-104,.1);block(12,38,7,46,-88,.2);
 
-/* ══ 11. 奶娃 ═════════════════════════════════════════ */
+/* ══ 11. 奶娃（按参考图：梨形无脖、前腹外凸、奶油蛋形腹斑、
+        薄荷绿眼白+大黑瞳、极细微笑线、手脚为深橄榄色带指/趾） ═══════ */
 var hero=new T.Group();
 (function(){
   var EYES=[];
-  var prof=[[0,.26],[.05,.37],[.17,.48],[.33,.53],[.50,.48],[.62,.38],
-            [.72,.30],[.82,.30],[.92,.33],[1.02,.32],[1.12,.26],[1.21,.15],[1.28,0]]
-            .map(function(q){return new T.Vector2(q[1],q[0]);});
-  var body=new T.Mesh(new T.LatheGeometry(prof,56),M.hero);
+  /* 侧影：底部宽、向上连续收成圆顶；最宽处在 t≈.38 */
+  var PROF=[[0.000,.190],[0.020,.258],[0.060,.306],[0.120,.352],[0.200,.384],
+            [0.290,.399],[0.380,.405],[0.470,.401],[0.550,.389],[0.620,.368],
+            [0.680,.342],[0.740,.307],[0.795,.266],[0.845,.222],[0.888,.176],
+            [0.925,.130],[0.957,.088],[0.982,.050],[1.000,0]];
+  function radAt(t){
+    if(t<=0)return PROF[0][1];
+    for(var i=0;i<PROF.length-1;i++){
+      if(t<=PROF[i+1][0]||i===PROF.length-2){
+        var a=PROF[i],b=PROF[i+1],k=(t-a[0])/Math.max(1e-6,b[0]-a[0]);
+        k=Math.max(0,Math.min(1,k));k=k*k*(3-2*k);
+        return a[1]+(b[1]-a[1])*k;
+      }
+    }
+    return 0;
+  }
+  /* 把回转体压成参考图那种非对称侧影：前腹鼓出来、上半身略后仰、后背压平 */
+  function bulge(x,t,z){
+    var h=Math.hypot(x,z)||1e-6, front=z/h;
+    var belly=Math.exp(-Math.pow((t-.40)/.30,2))*.125;
+    var lean=Math.max(0,(t-.68)/.32); lean=lean*lean*.085;
+    return front*belly-lean*(front*.35+1);
+  }
+  var profPts=PROF.map(function(q){return new T.Vector2(q[1],q[0]);});
+  var bodyGeo=new T.LatheGeometry(profPts,72);
+  (function(){
+    var a=bodyGeo.attributes.position;
+    for(var i=0;i<a.count;i++){
+      var x=a.getX(i),y=a.getY(i),z=a.getZ(i);
+      a.setZ(i,z+bulge(x,y,z));
+    }
+    bodyGeo.computeVertexNormals();
+  })();
+  var body=new T.Mesh(bodyGeo,M.hero);
   body.castShadow=body.receiveShadow=true;hero.add(body);
-  var bp=prof.slice(0,6).map(function(v){return new T.Vector2(v.x*1.014,v.y);});
-  var belly=new T.Mesh(new T.LatheGeometry(bp,26,-.58,1.16),M.belly);
-  belly.rotation.y=Math.PI/2;belly.receiveShadow=true;hero.add(belly);
-  /* 头顶奶滴：让剪影一眼认出来 */
-  var drop=mesh(new T.LatheGeometry([[0,0],[.115,.10],[.125,.20],[.09,.32],[.04,.42],[0,.46]]
-    .map(function(q){return new T.Vector2(q[0],q[1]);}),26),M.belly,0,1.26,0);
-  drop.castShadow=true;hero.add(drop);
+
+  /* 腹斑：贴着体表生成的曲面片，软边靠贴图 alpha，不是贴一张硬边圆片 */
+  (function(){
+    var t0=.085,t1=.585,ph0=-.86,ph1=.86,nu=26,nv=16;
+    var pos=[],uv=[],idx=[];
+    for(var j=0;j<=nv;j++){
+      var t=t0+(t1-t0)*j/nv, r=radAt(t)*1.006;
+      for(var i=0;i<=nu;i++){
+        var ph=ph0+(ph1-ph0)*i/nu;
+        var x=Math.sin(ph)*r, z=Math.cos(ph)*r;
+        pos.push(x,t,z+bulge(x,t,z)+.004);
+        uv.push(i/nu,j/nv);
+      }
+    }
+    for(j=0;j<nv;j++)for(i=0;i<nu;i++){
+      var A=j*(nu+1)+i,B=A+1,C=A+nu+1,D=C+1;
+      idx.push(A,C,B,B,C,D);
+    }
+    var g=new T.BufferGeometry();
+    g.setAttribute("position",new T.Float32BufferAttribute(pos,3));
+    g.setAttribute("uv",new T.Float32BufferAttribute(uv,2));
+    g.setIndex(idx);g.computeVertexNormals();
+    var m=new T.Mesh(g,std({map:bellyTex(),transparent:true,roughness:.46,
+      side:T.DoubleSide,envMapIntensity:.30,depthWrite:false}));
+    m.renderOrder=1;m.receiveShadow=true;hero.add(m);
+  })();
+
+  /* 眼睛：大眼白 + 占六成的大黑瞳 + 一点高光 */
+  var EYE_T=.905, EYE_X=.098;
+  var er=radAt(EYE_T);
   [-1,1].forEach(function(sd){
-    var e=mesh(new T.SphereGeometry(.062,16,14),M.eyeW,.084*sd,1.14,.168);
-    e.userData.r=.062;EYES.push(e);
-    var pu=mesh(new T.SphereGeometry(.036,14,12),M.eyeB,.084*sd,1.14,.203);
-    pu.userData.r=.036;EYES.push(pu);pu.scale.set(1,1,.6);
-    hero.add(mesh(new T.SphereGeometry(.013,8,6),M.gloss,.084*sd+.021,1.167,.234));
-    var blush=mesh(new T.SphereGeometry(.052,12,10),std({color:0xE08C72,roughness:.86}),
-      .148*sd,1.045,.128);
-    blush.scale.set(1,.6,.34);hero.add(blush);
+    var ex=EYE_X*sd, ez=Math.sqrt(Math.max(1e-4,er*er-ex*ex))*.96;
+    var dz=bulge(ex,EYE_T,ez);
+    var e=mesh(new T.SphereGeometry(.082,20,16),M.eyeW,ex,EYE_T,ez+dz-.010);
+    e.userData.r=.082;EYES.push(e);hero.add(e);
+    var pu=mesh(new T.SphereGeometry(.048,18,14),M.eyeB,
+      ex*1.02,EYE_T-.004,ez+dz+.060);
+    pu.userData.r=.048;EYES.push(pu);pu.scale.set(1,1,.55);hero.add(pu);
+    hero.add(mesh(new T.SphereGeometry(.017,10,8),M.gloss,
+      ex*1.02+.023*sd,EYE_T+.034,ez+dz+.087));
   });
-  var mo=mesh(new T.SphereGeometry(.04,12,10),M.mouth,0,1.055,.196);
-  mo.scale.set(1.6,.2,.5);hero.add(mo);
-  /* 脚：有脚的角色才站得住 */
+
+  /* 嘴：极细的一道弧，不是椭圆片 */
+  (function(){
+    var mt=.838, mr=radAt(mt);
+    var mz=Math.sqrt(Math.max(1e-4,mr*mr-.0009))*.99;
+    var dz=bulge(0,mt,mz);
+    var mo=new T.Mesh(new T.TorusGeometry(.072,.0085,6,22,1.15),M.mouth);
+    mo.rotation.z=-Math.PI/2-.575;
+    mo.position.set(0,mt,mz+dz-.004);
+    hero.add(mo);
+  })();
+
+  /* 腿脚：短粗腿 + 深橄榄大脚带三趾 */
   [-1,1].forEach(function(sd){
-    var ft=mesh(bevelBox(.20,.10,.30,.045,2),M.dark,.115*sd,.05,.045);
-    ft.rotation.y=sd*.22;hero.add(ft);
-    var f=mesh(new T.SphereGeometry(.13,14,12),M.dark,.15*sd,.055,.05);
-    f.scale.set(.85,.48,1.3);hero.add(f);
+    var leg=new T.Group();
+    leg.add(mesh(new T.CylinderGeometry(.128,.158,.30,16),M.hero,0,-.15,0));
+    leg.add(mesh(new T.SphereGeometry(.162,16,12),M.hero,0,0,0));
+    var foot=new T.Group();foot.position.set(0,-.30,0);
+    var sole=mesh(bevelBox(.215,.085,.315,.04,2),M.dark,0,-.020,.055);
+    foot.add(sole);
+    var ankle=mesh(new T.SphereGeometry(.108,14,12),M.dark,0,.030,.170);
+    ankle.scale.set(1,.72,.9);foot.add(ankle);
+    for(var k=-1;k<2;k++){
+      var toe=mesh(new T.SphereGeometry(.040,12,10),M.dark,k*.062,-.030,.205);
+      toe.scale.set(1,.80,1.35);foot.add(toe);
+    }
+    leg.add(foot);
+    leg.position.set(sd*.175,-.005,.02);
+    leg.rotation.z=-sd*.10;
+    hero.add(leg);
+    hero.add(ao(.62,.34,sd*.185,.055,.06));
   });
-  var armL=new T.Group();
-  armL.add(mesh(new T.CapsuleGeometry(.062,.34,4,10),M.hero,0,-.17,0));
-  armL.add(mesh(new T.SphereGeometry(.095,14,12),M.dark,0,-.36,.02));
-  armL.position.set(-.24,.66,.13);armL.rotation.set(.55,0,.95);hero.add(armL);
-  var armR=new T.Group();
-  armR.add(mesh(new T.CapsuleGeometry(.062,.36,4,10),M.hero,0,.18,0));
-  armR.add(mesh(new T.SphereGeometry(.098,14,12),M.dark,0,.39,0));
-  armR.position.set(.26,.68,.11);armR.rotation.z=-1.15;hero.add(armR);
-  /* 报到装备：双肩包 + 手提箱 */
-  var pack=new T.Group();
-  pack.add(box(.44,.42,.20,std({normalMap:sm.normal,color:0x1B4B8D,roughness:.82,
-    envMapIntensity:.6}),0,0,0));
-  pack.add(box(.30,.10,.06,std({color:0xC9A227,roughness:.5,metalness:.4}),0,.10,.13));
-  pack.position.set(0,.72,-.44);hero.add(pack);
-  [-1,1].forEach(function(sd){
-    hero.add(mesh(new T.CapsuleGeometry(.032,.30,3,8),
-      std({color:0x16345C,roughness:.85}),sd*.17,.86,-.30));});
+
+  /* 手臂：先给方向再定姿势，比手调欧拉角可靠 */
+  function buildArm(sd,dir,bend){
+    var pivot=new T.Group();                 /* 动画只动这一层 */
+    pivot.position.set(sd*.455,.595,.075);
+    var g=new T.Group();                     /* 姿势锁在这一层 */
+    g.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),
+      new T.Vector3(dir[0],dir[1],dir[2]).normalize());
+    g.add(mesh(new T.SphereGeometry(.145,16,12),M.hero,0,0,0));
+    g.add(mesh(new T.CylinderGeometry(.104,.140,.28,16),M.hero,0,-.145,0));
+    var fore=new T.Group();fore.position.set(0,-.29,0);
+    fore.add(mesh(new T.SphereGeometry(.110,14,12),M.hero,0,0,0));
+    fore.add(mesh(new T.CylinderGeometry(.086,.108,.23,14),M.hero,0,-.115,0));
+    fore.rotation.x=bend;
+    var hand=new T.Group();hand.position.set(0,-.235,0);
+    var palm=mesh(new T.SphereGeometry(.112,18,14),M.dark,0,-.058,0);
+    palm.scale.set(.94,.86,1.14);hand.add(palm);
+    for(var i=0;i<4;i++){
+      var a=(i-1.5)*.30;
+      var f=mesh(new T.CapsuleGeometry(.025,.060,3,8),M.dark,
+        Math.sin(a)*.055,-.145,Math.cos(a)*.048);
+      f.rotation.x=.22;f.rotation.z=a;hand.add(f);
+    }
+    hand.add(mesh(new T.SphereGeometry(.033,10,8),M.dark,-.088*sd,-.045,.052));
+    fore.add(hand);g.add(fore);
+    pivot.add(g);hero.add(pivot);
+    return pivot;
+  }
+  /* 屏幕右侧那只举起挥手，另一只搭在肚子上 */
+  var armR=buildArm(-1,[-.46,.78,.42],.34);
+  var armL=buildArm( 1,[-.11,-.20,.97],-.52);
+  hero.userData={armR:armR,armL:armL,eyes:EYES};
+
+  /* 报到装备：只留一只地上的箱子，参考图身上没有背包 */
   var caseG=new T.Group();
   caseG.add(box(.44,.32,.16,std({normalMap:sm.normal,color:0x8A4A2C,roughness:.72,
     envMapIntensity:.7}),0,.17,0));
   caseG.add(box(.18,.05,.06,M.pole,0,.36,0));
   caseG.add(box(.46,.05,.18,std({color:0x6B3820,roughness:.8}),0,.19,0));
-  caseG.position.set(-.40,.01,.16);caseG.rotation.y=.4;hero.add(caseG);
-  hero.userData={armR:armR,armL:armL,eyes:EYES};
+  caseG.position.set(-.62,-.300,.30);caseG.rotation.y=.5;hero.add(caseG);
 })();
-var HS=1.8;hero.scale.setScalar(HS);
-hero.position.set(1.5,0,-5.4);hero.rotation.y=Math.PI-.34;
-hero.add(ao(2.3,.40,0,.03,0));scene.add(hero);
+var HS=1.86;hero.scale.setScalar(HS);
+hero.position.set(2.05,.44*HS,-4.3);hero.rotation.y=.30;   /* 实测脚底比局部原点还低，抬高补掉 */
+scene.add(hero);
+scene.add(ao(3.6,.34,2.05,.05,-4.3));
 
 /* ══ 12. 落叶 ═════════════════════════════════════════ */
 var LEAVES=reduce?0:110,lp=new Float32Array(LEAVES*3),ls=[];
@@ -998,6 +1103,8 @@ var fill=new T.DirectionalLight(0xD8C6A8,.30);fill.position.set(-16,11,14);scene
   sp.position.set(s*4.4,1.2,-12.2);sp.target.position.set(s*1.1,8.4,-14);
   scene.add(sp);scene.add(sp.target);
 });
+var heroFill=new T.PointLight(0xFFE4C2,7,9.5,2);
+heroFill.position.set(2.05,2.3,.6);scene.add(heroFill);
 var warm=new T.PointLight(0xFFC070,14,11,2);warm.position.set(-4.9,1.7,-3.4);scene.add(warm);
 var warm2=new T.PointLight(0xFFC070,11,10,2);warm2.position.set(5.1,1.7,-6.8);scene.add(warm2);
 
@@ -1058,7 +1165,6 @@ function applyCam(el){
   camera.position.set(orb.target.x+orb.r*sp*Math.sin(orb.theta),
     orb.target.y+orb.r*Math.cos(orb.phi),
     orb.target.z+orb.r*sp*Math.cos(orb.theta));
-  if(el!==undefined&&!reduce)camera.position.y+=Math.sin(el*.31)*.09;
   camera.lookAt(orb.target);
 }
 var ptrs=new Map(),dragging=false,lastX=0,lastY=0,pinch=0,moved=0;
@@ -1119,10 +1225,10 @@ function frame(){
   var br=Math.sin(el*2.4);
   hero.scale.set(HS*(1-br*.006),HS*(1+br*.014),HS*(1-br*.006));
   var amp=intro.on?0:1;
-  hero.userData.armR.rotation.z=-1.15-Math.sin(el*4.6)*.30*amp;
+  hero.userData.armR.rotation.z=-Math.sin(el*4.6)*.20*amp;
   hero.userData.armR.rotation.x=Math.sin(el*2.3)*.12*amp;
-  var blink=(el%3.4)>3.22?.14:1;
-  hero.userData.eyes.forEach(function(x){x.scale.y=x.userData.r*blink;});
+  var blink=(el%3.4)>3.22?.10:1;
+  hero.userData.eyes.forEach(function(x){x.scale.y=blink;});
 
   if(!reduce){
     for(var i=0;i<trees.length;i++){
@@ -1160,7 +1266,6 @@ function frame(){
       }
       lg.attributes.position.needsUpdate=true;
     }
-    sun.intensity=2.75+Math.sin(el*.5)*.09;
   }
   updateCrowd(el,dt);
   if(grade)grade.uniforms.time.value=el;
@@ -1201,7 +1306,9 @@ if(/[?&]still/.test(Q)){
   var gq=function(k,d){var m=new RegExp("[?&]"+k+"=([-0-9.]+)").exec(Q);
     return m?parseFloat(m[1]):d;};
   orb.theta=orb.tTheta=gq("th",HOME.theta);orb.phi=orb.tPhi=gq("ph",HOME.phi);
-  orb.r=orb.tR=gq("r",HOME.r);applyCam();
+  orb.r=orb.tR=gq("r",HOME.r);
+  orb.target.set(gq("tx",0),gq("ty",HOME.ty),gq("tz",-12));
+  applyCam();
   /* 定帧跑法下合成帧极少，CSS 淡入走不完，遮罩会一直盖住画面 */
   load.style.transition="none";load.style.display="none";
 }
@@ -1213,7 +1320,9 @@ if(/[?&]probe/.test(Q))setTimeout(function(){
     "font:11px/1.5 ui-monospace,monospace;padding:6px 8px;border-radius:6px";
   d.textContent="calls="+renderer.info.render.calls+" tris="+renderer.info.render.triangles+
     " glErr="+gl.getError()+" lost="+gl.isContextLost()+
-    " px="+Array.prototype.join.call(px,",")+" geo="+renderer.info.memory.geometries;
+    " px="+Array.prototype.join.call(px,",")+" geo="+renderer.info.memory.geometries+
+    " handR="+hero.userData.armR.children[0].children[1].children[1].getWorldPosition(new T.Vector3()).toArray().map(function(v){return v.toFixed(2);}).join(",")+
+    " handL="+hero.userData.armL.children[0].children[1].children[1].getWorldPosition(new T.Vector3()).toArray().map(function(v){return v.toFixed(2);}).join(",");
   document.body.appendChild(d);
 },60);
 window.__cv={orb:orb,camera:camera,scene:scene,renderer:renderer,
