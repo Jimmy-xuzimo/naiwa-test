@@ -79,6 +79,7 @@
 
 <script src="vendor/three.min.js"></script>
 <script src="vendor/post.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
 <script>
 addEventListener("error",function(e){
   var d=document.createElement("div");
@@ -159,6 +160,20 @@ function stoneMaps(){
   var r=cvs(S,S),rg=r.getContext("2d");
   rg.fillStyle="#b8b8b8";rg.fillRect(0,0,S,S);noise(rg,S,S,.55,150,215);
   return {normal:tex(toNormal(h,2.4),null,true),rough:tex(r,null,true)};
+}
+function fineStone(){
+  var S=256,h=cvs(S,S),g=h.getContext("2d");
+  g.fillStyle="#808080";g.fillRect(0,0,S,S);
+  for(var i=0;i<1100;i++){
+    var x=Math.random()*S,y=Math.random()*S,a=Math.random()*6.283,l=3+Math.random()*12;
+    g.strokeStyle="rgba(255,255,255,"+(.10+Math.random()*.24)+")";
+    g.lineWidth=.7+Math.random()*1.7;
+    g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();
+    g.strokeStyle="rgba(0,0,0,"+(.10+Math.random()*.22)+")";
+    g.beginPath();g.moveTo(x+1,y+1);g.lineTo(x+1+Math.cos(a)*l,y+1+Math.sin(a)*l);g.stroke();
+  }
+  noise(g,S,S,.62,88,172);
+  return tex(toNormal(h,2.0),[7,7],true);
 }
 function tileMaps(){
   var W=512,H=256,h=cvs(W,H),g=h.getContext("2d");
@@ -381,6 +396,7 @@ scene.fog=new T.Fog(0xCBD3D2,40,186);
 
 /* ══ 3. 材质库：全部带法线 + 粗糙度 + 环境反射 ═══════════ */
 var sm=stoneMaps(),tm=tileMaps(),pm2=paveMaps(),gm=grassMaps(),fm=facadeMaps(),cr=clothRough();
+var fstone=fineStone();
 function std(o){return new T.MeshStandardMaterial(o);}
 var M={
   stone : std({normalMap:sm.normal,roughnessMap:sm.rough,color:0xAA9E88,
@@ -526,7 +542,7 @@ var gate=new T.Group();gate.position.set(0,0,-14);scene.add(gate);
 gate.add(box(19.4,.34,2.6,M.stoneB,0,.17,0));
 gate.add(box(18.6,.3,2.2,M.stoneD,0,.49,0));
 gate.add(box(17.8,.26,1.9,M.stone,0,.77,0));
-gate.add(ao(21,.30,0,.055,0));
+
 
 function pillar(x,top){
   var g=new T.Group();
@@ -623,6 +639,7 @@ function roof(w,d,y){
 gate.add(roof(7.9,1.55,9.55));
 var r2=roof(3.9,1.25,7.35);r2.position.x=-5.0;gate.add(r2);
 var r3=roof(3.9,1.25,7.35);r3.position.x=5.0;gate.add(r3);
+var N_STRUCT=gate.children.length;   /* ↑ 以上的都是结构件，?blend 时由烘焙模型顶替 */
 
 gate.add(box(4.5,1.34,.2,M.stoneD,0,8.45,.55));
 var signMat=inkMat(plaqueTex("中国奶娃大学","#173F66","#F3EAD5",1024,288,148),.8);
@@ -635,6 +652,7 @@ var signB=sign.clone();signB.rotation.y=Math.PI;signB.position.set(0,8.45,.43);g
   s.position.set(o[0],6.66,.56);gate.add(s);
   var b=s.clone();b.rotation.y=Math.PI;b.position.z=-.56;gate.add(b);
 });
+var N_SIGN=gate.children.length;     /* ↑ 匾额与院名牌，永远保留 */
 /* 校区围栏：连续墙身 + 压顶 + 望柱，而不是一颗颗白积木 */
 [-1,1].forEach(function(s){
   var cx=s*15.6;
@@ -651,6 +669,7 @@ var signB=sign.clone();signB.rotation.y=Math.PI;signB.position.set(0,8.45,.43);g
   }
   for(var k=0;k<7;k++)gate.add(ao(3.2,.17,s*(9.4+k*2.1),.05,0));
 });
+var N_ALL=gate.children.length;
 
 /* ══ 7. 树：两层噪声位移冠 + 分枝 + 风摆 ═══════════════ */
 function canopy(mat,r,seed){
@@ -1276,6 +1295,43 @@ addEventListener("resize",function(){
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight,false);sizeFX();
 });
+
+/* ══ 17b. 可选：Blender 烘焙的校门（?blend） ═════════════
+   高模 13k 面 + 自烘 AO，顶替程序化的台基/柱/梁/斗拱/屋顶/围栏；
+   匾额、欢迎横幅仍用程序化版本，位置不变。载入失败就保持原样。 */
+var STRUCT_ON=true;
+if(/[?&]blend/.test(Q)&&T.GLTFLoader){
+  (function(){
+    var i,struct=[];
+    for(i=0;i<N_STRUCT;i++)struct.push(gate.children[i]);
+    for(i=N_SIGN;i<N_ALL;i++)struct.push(gate.children[i]);
+    var img=new Image();
+    img.onload=function(){
+      var aoT=new T.CanvasTexture(img);
+      aoT.wrapS=aoT.wrapT=T.ClampToEdgeWrapping;aoT.flipY=false;
+      new T.GLTFLoader().load("assets/gate.glb",function(gl){
+        var gm=std({normalMap:fstone,roughnessMap:sm.rough,aoMap:aoT,aoMapIntensity:1,
+          color:0xA79B83,roughness:1,metalness:0,envMapIntensity:.38});
+        grime(gm,.30,7.5,.42);
+        gl.scene.traverse(function(o){
+          if(!o.isMesh)return;
+          o.material=gm;
+          if(o.geometry.attributes.uv)o.geometry.setAttribute("uv2",o.geometry.attributes.uv);
+          o.castShadow=o.receiveShadow=true;
+        });
+        gl.scene.rotation.x=-Math.PI/2;   /* 导出没走 Y-up，Z-up 的模型在 three 里是躺着的 */
+        gl.scene.updateMatrixWorld(true);
+        var bb=new T.Box3().setFromObject(gl.scene);
+        gl.scene.position.y-=bb.min.y+gate.position.y;   /* 落地：不管导出把原点放哪都对 */
+        gate.add(gl.scene);
+        for(var k=0;k<struct.length;k++)struct[k].visible=false;
+        STRUCT_ON=false;
+      },null,function(e){ console.warn("gate.glb 载入失败，保持程序化校门",e); });
+    };
+    img.onerror=function(){ console.warn("gate_ao.png 载入失败，保持程序化校门"); };
+    img.src="assets/gate_ao.png";
+  })();
+}
 
 /* ══ 18. UI ═══════════════════════════════════════════ */
 var hi=hiEnd,usePost=!!composer,qualBtn=document.getElementById("qual");
