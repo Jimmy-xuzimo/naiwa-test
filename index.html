@@ -55,7 +55,7 @@
     position:relative;width:min(430px,94vw);flex:none;
     background:var(--paper);border:1px solid rgba(27,75,141,.16);border-radius:4px;
     box-shadow:0 24px 60px -22px rgba(22,39,63,.34), 0 2px 0 rgba(255,255,255,.9) inset;
-    padding:30px 26px 26px;text-align:center;
+    padding:46px 26px 26px;text-align:center;
     transform-origin:50% 42%;
     opacity:0;transform:perspective(1100px) rotateX(-22deg) translateY(26px) scale(.965);
     will-change:transform,opacity;
@@ -91,17 +91,52 @@
   .rule{width:0;height:2px;background:var(--gold);margin:15px auto 0;opacity:.85}
 
   /* ── 舞台：lane 裁切走路，印章在 lane 外不被裁 ── */
-  .stage{position:relative;height:196px;margin:6px auto 0}
-  .lane{position:absolute;inset:0;overflow:hidden}
+  .stage{position:relative;height:196px;margin:10px auto 0}
+  /* ── 3D 舞台：真透视 + 可拖拽转体 + 分层景深 ── */
+  .stage{perspective:820px;perspective-origin:50% 62%}
+  .diorama{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
+    cursor:grab;touch-action:pan-y}
+  .diorama.dragging{cursor:grabbing}
+  /* 3D 地面：一条躺平的椭圆，是「立体感」最省成本的一招 */
+  .floor{position:absolute;left:50%;bottom:4px;width:330px;height:150px;margin-left:-165px;
+    transform:translateZ(-170px) rotateX(74deg);transform-origin:50% 100%;pointer-events:none;
+    background:radial-gradient(50% 62% at 50% 42%, rgba(27,75,141,.15), transparent 72%);
+    opacity:0;will-change:opacity}
+  /* overflow:hidden 会压平 3D，所以整条 lane 前浮，而不是在 lane 内部做 Z */
+  .lane{position:absolute;inset:0}
   /* 三帧共用同一中心线：换帧时身体不会横向跳位，剪辑点才藏得住 */
   .walker{position:absolute;bottom:0;left:0;width:100%;height:100%;
-    transform-origin:50% 100%;will-change:transform}
+    transform-origin:50% 100%;transform-style:preserve-3d;will-change:transform}
   .walker img{position:absolute;bottom:0;left:50%;height:186px;width:auto;opacity:0;
-    transform:translateX(-50%);transform-origin:50% 100%;will-change:transform,opacity}
+    transform:translateX(-50%);transform-origin:50% 100%;
+    will-change:transform,opacity}
   .shadow{position:absolute;bottom:2px;left:50%;width:118px;height:13px;margin-left:-59px;
     border-radius:50%;
     background:radial-gradient(50% 50% at 50% 50%, rgba(22,39,63,.26), transparent 70%);
     opacity:0;will-change:transform,opacity}
+  /* 前景浮尘：与角色不同 z，转体时自动产生视差 */
+  .motes{position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d}
+  .motes i{position:absolute;width:5px;height:5px;border-radius:50%;
+    background:rgba(201,162,39,.55);opacity:0;transform:translateZ(74px)}
+  .motes i:nth-child(2n){background:rgba(27,75,141,.4);width:4px;height:4px}
+  @keyframes twinkle{0%,100%{opacity:0}45%,55%{opacity:.85}}
+  /* 摸头反馈 */
+  .hint{position:absolute;bottom:0;right:8px;font-size:10px;letter-spacing:.1em;
+    color:rgba(22,39,63,.32);opacity:0;transition:opacity .5s ease;pointer-events:none;
+    transform:translateZ(46px)}
+
+  /* 校名跑马灯 */
+  .ticker{position:absolute;top:0;left:0;right:0;height:22px;overflow:hidden;
+    border-bottom:1px solid rgba(27,75,141,.1);opacity:0;transition:opacity .7s ease}
+  .ticker.in{opacity:.5}
+  .ticker b{position:absolute;white-space:nowrap;font-size:10px;font-weight:400;
+    letter-spacing:.42em;color:var(--blue);top:5px;animation:slide 26s linear infinite}
+  @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* 语录轮播 */
+  .quote{min-height:17px;margin-top:5px;font-size:11.5px;letter-spacing:.05em;
+    color:rgba(22,39,63,.5);opacity:0;transition:opacity .35s ease}
+  .quote.show{opacity:1}
 
   .stamp{position:absolute;top:16px;right:14px;width:96px;height:96px;display:grid;place-items:center;
     border:3px double var(--red);border-radius:50%;color:var(--red);
@@ -172,6 +207,7 @@
 <div id="scene">
 <main class="sheet" id="sheet">
   <div class="sheen" id="sheen" aria-hidden="true"><i></i></div>
+  <div class="ticker" id="ticker" aria-hidden="true"><b>中国奶娃大学 · 新生护送中心 · 中国奶娃大学 · 新生护送中心 · 中国奶娃大学 · 新生护送中心 · 中国奶娃大学 · 新生护送中心 · </b></div>
 
   <div class="crest" id="crest">
     <svg viewBox="0 0 150 150" aria-hidden="true"><circle id="ring" cx="75" cy="75" r="72"/></svg>
@@ -183,19 +219,25 @@
   <div class="rule" id="rule"></div>
 
   <div class="stage">
-    <div class="lane">
-      <div class="walker" id="walker">
-        <img src="assets/pose1.webp" alt="" class="f">
-        <img src="assets/pose2.webp" alt="奶娃挥手欢迎你" class="f">
-        <img src="assets/pose3.webp" alt="" class="f">
+    <div class="diorama" id="diorama">
+      <div class="floor" id="floor"></div>
+      <div class="lane">
+        <div class="walker" id="walker">
+          <img src="assets/pose1.webp" alt="" class="f">
+          <img src="assets/pose2.webp" alt="奶娃挥手欢迎你" class="f">
+          <img src="assets/pose3.webp" alt="" class="f">
+        </div>
+        <div class="shadow" id="shadow"></div>
       </div>
-      <div class="shadow" id="shadow"></div>
+      <div class="motes" id="motes" aria-hidden="true"></div>
+      <span class="hint" id="hint">拖拽转体 · 点我</span>
     </div>
     <div class="stamp" id="stamp" aria-hidden="true">录取<br>专用章</div>
     <div class="impact" id="impact" aria-hidden="true"></div>
   </div>
 
   <p class="status" id="status" aria-live="polite">奶娃正在护送你前往<br><b>南京传媒学院</b></p>
+  <p class="quote" id="quote" aria-live="polite"></p>
 
   <div class="meter" id="meter">
     <div class="bar"><div class="fill" id="fill"></div></div>
@@ -241,6 +283,8 @@
         sheenBar=sheen.firstElementChild, walker=q("walker"), shadow=q("shadow"),
         stamp=q("stamp"), impact=q("impact"), status=q("status"), meter=q("meter"),
         actions=q("actions"), fill=q("fill"), secs=q("secs"), phase=q("phase"),
+        diorama=q("diorama"), floor=q("floor"), motes=q("motes"), hint=q("hint"),
+        ticker=q("ticker"), quote=q("quote"),
         frames=[...walker.querySelectorAll(".f")];
 
   const forced = new URLSearchParams(location.search).get("motion");
@@ -271,11 +315,77 @@
   });
 
   /* 布局量缓存，绝不在每帧读（offsetWidth 会触发强制同步回流） */
-  let SW = 0;
-  function measure(){ SW = walker.parentElement.clientWidth || 320; }
+  let SW = 0, FW = 146;
+  function measure(){
+    SW = walker.parentElement.clientWidth || 320;
+    FW = Math.max(...frames.map(f => f.offsetWidth || 146));
+  }
   addEventListener("resize", measure);
   addEventListener("load", measure);
   measure();
+
+  /* 前景浮尘：与角色不同 z，转体时自动产生视差 */
+  const moteList = [];
+  for (let i=0;i<9;i++){
+    const m=document.createElement("i");
+    m.style.left=(6+Math.random()*88)+"%";
+    m.style.top=(8+Math.random()*76)+"%";
+    m.style.animation=`twinkle ${2.6+Math.random()*2.4}s ease-in-out ${Math.random()*3}s infinite`;
+    motes.appendChild(m); moteList.push(m);
+  }
+
+  /* ── 可交互 3D：拖拽转体 + 松手回弹 + 惯性 ── */
+  let tRY=0, tRX=0, cRY=0, cRX=0, vRY=0;                 // 目标角 / 当前角 / 角速度
+  let dragging=false, px0=0, py0=0, moved=0, petAt=-9;
+  const MAX_Y=26, MAX_X=9;
+
+  diorama.addEventListener("pointerdown", e=>{
+    dragging=true; moved=0; px0=e.clientX; py0=e.clientY;
+    diorama.classList.add("dragging");
+    diorama.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  });
+  diorama.addEventListener("pointermove", e=>{
+    if (!dragging) return;
+    const dx=e.clientX-px0, dy=e.clientY-py0;
+    moved=Math.max(moved, Math.abs(dx)+Math.abs(dy));
+    tRY=clamp(dx*0.34, -MAX_Y, MAX_Y);
+    tRX=clamp(-dy*0.16, -MAX_X, MAX_X);
+    vRY=tRY*0.02;
+  });
+  const endDrag = ()=>{
+    if (!dragging) return;
+    dragging=false; diorama.classList.remove("dragging");
+    tRY=0; tRX=0;                                        // 回弹到正面
+    pauseFor(1200);
+  };
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>diorama.addEventListener(ev, endDrag));
+
+  /* ── 摸头彩蛋（偷自宇宙奶龙大学）：轻点奶娃，他缩一下、换一句语录、倒计时暂停 ── */
+  const QUOTES=[
+    "奶娃说：这次要看完整动画哦",
+    "奶娃说：我护送过 4000 多个新生了",
+    "奶娃说：章已经盖了，不接受退学",
+    "奶娃说：别拽了，我晕 3D",
+    "奶娃说：南传在江宁，方山后面",
+  ];
+  let qi=0;
+  function showQuote(txt){
+    quote.textContent=txt; quote.classList.add("show");
+    clearTimeout(showQuote._t);
+    showQuote._t=setTimeout(()=>quote.classList.remove("show"), 3200);
+  }
+  diorama.addEventListener("click", e=>{
+    e.stopPropagation();                                 // 拖完松手也会派发 click，必须挡掉
+    if (moved>8) return;                                 // 那是拖拽，不是点
+    petAt = nowT;
+    qi=(qi+1)%QUOTES.length; showQuote(QUOTES[qi]);
+    pauseFor(2200);
+  });
+
+  /* 暂停到某个时刻（拖拽/摸头共用），到点自动续上；与「按住不走」互不干扰 */
+  let resumeAt = 0, nowT = 0;
+  function pauseFor(ms){ resumeAt = Math.max(resumeAt, performance.now() + ms); }
 
   /* 衰减正弦：τ=0 时为 0，先冲出去再收敛回来 —— 保证与上一段无缝衔接 */
   const damped = (τ, f, z) => Math.exp(-z*τ) * Math.sin(f*τ);
@@ -284,7 +394,7 @@
 
   /* 角色三段表演：走入 → 招手 → 待命。每段只允许一种运动，不叠加 */
   function actor(t){
-    const xEnd = -SW*.20, xStart = -(SW*.5 + 70);
+    const xEnd = -SW*.16, xStart = -(SW - FW)/2 + 6;   // 起点仍在画内，靠淡入入场
     let idx = 0, x = xStart, rot = 0, sy = 1, sx = 1;
 
     if (t < K.walk[0]){
@@ -393,19 +503,27 @@
     q("foot").style.opacity = up * .9;
 
     /* ⑦ 角色：走入 → 招手 → 待命 → 鞠躬，每段只允许一种运动 */
+    nowT = t;
+    ticker.classList.toggle("in", t > K.dept);
+    diorama.style.transform = `rotateY(${cRY.toFixed(2)}deg) rotateX(${cRX.toFixed(2)}deg)`;
+    floor.style.opacity = (softOut(seg(t, K.walk[0], K.walk[0]+.55))*.9).toFixed(3);
+    hint.style.opacity = (t > K.idle && !dragging) ? .9 : 0;
+
     const a = actor(t);
+    const pet = pulse(t, petAt, .34);                    // 摸头：压一下再弹回
+    const sy = a.sy - pet*.075, sx = a.sx + pet*.06;
     walker.style.transform = `translate3d(${a.x.toFixed(2)}px,0,0) rotate(${a.rot.toFixed(3)}deg)`;
     frames.forEach((el,i)=>{
       const on = i === a.idx && t >= K.walk[0];
       el.style.opacity = on ? 1 : 0;
       el.style.transform = on
-        ? `translateX(-50%) scale(${a.sx.toFixed(4)},${a.sy.toFixed(4)})`
+        ? `translateX(-50%) scale(${sx.toFixed(4)},${sy.toFixed(4)})`
         : "translateX(-50%)";
     });
-    const show = softOut(seg(t, K.walk[0], K.walk[0] + .30));
+    const show = softOut(seg(t, K.walk[0], K.walk[0] + .42));
     /* 素材自带接触阴影，这里只补一层很淡的接地感，避免两重影子 */
-    shadow.style.opacity = (.20 * show).toFixed(3);
-    shadow.style.transform = `translateX(${a.x.toFixed(2)}px) scaleX(${(1 + (1 - a.sy) * 2.6).toFixed(3)})`;
+    shadow.style.opacity = (.20 * show * (1 - Math.abs(cRY)/MAX_Y*.45)).toFixed(3);
+    shadow.style.transform = `translateX(${a.x.toFixed(2)}px) scaleX(${(1 + (1 - sy) * 2.6).toFixed(3)})`;
 
     /* ⑧ 盖章：弹簧压入 + 微旋回弹 */
     const st = seg(t, K.stamp, K.stamp+.55);
@@ -443,11 +561,16 @@
     if (!last) last = now;
     const dt = Math.min(now - last, 60);      // 切后台回来不跳帧
     last = now;
-    if (!held && !hidden) el += dt;
+    /* 角度按真实 dt 插值 → 60Hz 与 120Hz 手感一致 */
+    const k = 1 - Math.pow(.0016, dt/1000);
+    cRY += (tRY - cRY) * k;
+    cRX += (tRX - cRX) * k;
+    const frozen = held || hidden || dragging || now < resumeAt;
+    if (!frozen) el += dt;
     const t = el/1000;
     render(t);
-    if (!fired && t >= K.stamp){ fired = true; burst(); }
-    if (t >= K.end) return leave();
+    if (!fired && t >= K.stamp){ fired = true; burst(); showQuote(QUOTES[0]); }
+    if (t >= K.end && !frozen) return leave();
     raf = requestAnimationFrame(tick);
   }
 
