@@ -8,8 +8,6 @@
 >
 > 「中国奶娃大学」是虚构名称。页面中的校名、校徽元素、角色语录及「录取专用章」仅作趣味展示，不代表校方立场，不提供任何招生、录取或学籍服务。学校信息请以 [南京传媒学院官网](https://www.cucn.edu.cn/) 为准。
 
-![项目离线渲染展示](https://raw.githubusercontent.com/yuyx0407/naiwa-test/main/assets/film/hero.jpg)
-
 ## 页面
 
 | 入口 | 内容 |
